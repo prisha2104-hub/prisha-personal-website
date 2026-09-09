@@ -1,0 +1,68 @@
+---
+import Base from '../layouts/Base.astro';
+import Note from '../components/Note.astro';
+import IndexList from '../components/IndexList.astro';
+---
+
+<Base home>
+  <section class="intro wrap">
+    <p class="label">01 / 09</p>
+    <h1>Prisha Agarwal</h1>
+    <div class="prose copy">
+      <p>
+        I study mathematics and economics in New York, which is the formal way of saying I like
+        knowing why things happen. <Note id="note-markets" note="The financial kind, mostly. I’m told there are other kinds.">Markets</Note>{' '}are
+        where I do most of my looking, since the answer refuses to stay put.
+      </p>
+      <p>
+        When reading about something stops being enough, I build the thing. Right now that’s
+        Universal Asset Analyzer, which exists because proper investment research takes more
+        browser <Note id="note-tabs" note="Current count: undisclosed. My laptop fan has opinions.">tabs</Note>{' '}than
+        any reasonable person should have open.
+      </p>
+      <p>
+        This site is arranged by curiosity rather than chronology. If you’re here for the strictly
+        professional account, <a href="/conventional">the conventional version</a> exists and is
+        very well behaved. Otherwise, start anywhere.{' '}
+        <a href="/one-thing-led-to-another">One thing tends to lead to another.</a>
+      </p>
+    </div>
+  </section>
+
+  <section class="wrap index-section">
+    <IndexList />
+    <p class="furnishing">Parts of this place are still being furnished. The load-bearing walls are up.</p>
+  </section>
+</Base>
+
+<style>
+  .intro {
+    padding-top: clamp(4rem, 12vh, 8rem);
+  }
+
+  h1 {
+    margin-top: 1.6rem;
+    font-size: var(--text-h1);
+  }
+
+  .copy {
+    margin-top: clamp(2rem, 5vh, 3rem);
+    font-size: clamp(1.125rem, 1.05rem + 0.45vw, 1.3125rem);
+    line-height: 1.6;
+  }
+
+  .copy p + p {
+    margin-top: 1.25em;
+  }
+
+  .index-section {
+    margin-top: clamp(4.5rem, 11vh, 7.5rem);
+  }
+
+  .furnishing {
+    margin-top: 2.4rem;
+    font-style: italic;
+    color: var(--ink-faint);
+    font-size: var(--text-small);
+  }
+</style>

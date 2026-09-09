@@ -1,0 +1,1274 @@
+---
+import type { Moment } from '../data/chain';
+
+interface Props {
+  moments: Moment[];
+}
+
+const { moments } = Astro.props;
+---
+
+<section class="chain" data-chain>
+  <i class="probe" aria-hidden="true" data-probe></i>
+
+  <svg class="vine" aria-hidden="true" data-vine>
+    <defs>
+      <linearGradient id="vine-in" gradientUnits="userSpaceOnUse" data-grad="in">
+        <stop offset="0" stop-opacity="0"></stop>
+        <stop offset="1" stop-opacity="1"></stop>
+      </linearGradient>
+      <linearGradient id="vine-out" gradientUnits="userSpaceOnUse" data-grad="out">
+        <stop offset="0" stop-opacity="1"></stop>
+        <stop offset="1" stop-opacity="0"></stop>
+      </linearGradient>
+    </defs>
+    <g data-strokes></g>
+  </svg>
+
+  <div class="vine-labels" aria-hidden="true">
+    {
+      moments
+        .filter((m) => m.connector)
+        .map((m) => (
+          <span class="vine-label" data-label={m.id}>
+            {m.connector}
+          </span>
+        ))
+    }
+  </div>
+
+  <ol class="moments">
+    {
+      moments.map((m) => {
+        const ev = m.evidence;
+        const evId = ev ? `evidence-${m.id}` : undefined;
+        return (
+          <li
+            id={m.id}
+            class:list={['moment', `place-${m.place}`, `moment-${m.id}`]}
+            data-moment={m.id}
+            data-place={m.place}
+          >
+            <div class="body">
+              <h3 class="heading" data-anchor>
+                {m.connector && <span class="vh">{m.connector}, </span>}
+                {m.heading}
+              </h3>
+              <p class="detail">
+                {m.detail.map((part) =>
+                  typeof part === 'string' ? (
+                    part
+                  ) : (
+                    <span
+                      class="term"
+                      role="button"
+                      tabindex="0"
+                      aria-expanded="false"
+                      aria-controls={evId}
+                      data-trigger
+                    >
+                      {part.term}
+                      <sup aria-hidden="true">*</sup>
+                    </span>
+                  )
+                )}
+              </p>
+
+              {ev && ev.kind === 'tabs' && (
+                <div class="evidence ev-tabs" id={evId} data-evidence>
+                  <ul class="inner tabstrip">
+                    {ev.items.map((t, j) => (
+                      <li class="item" style={`--i: ${j}`} data-default={j < 3 ? '' : undefined}>
+                        {t}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {m.product && (
+                <div class="product">
+                  <p class="product-name">{m.product.name}</p>
+                  <a class="more" href={m.product.href}>
+                    <span class="more-text">{m.product.cta}</span>
+                    <span class="arrow" aria-hidden="true">→</span>
+                  </a>
+                  <ul class="peek" aria-hidden="true">
+                    {m.product.peek.map((p, j) => (
+                      <li style={`--i: ${j}`}>{p}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+
+            {ev && ev.kind !== 'tabs' && (
+              <div class:list={['evidence', `ev-${ev.kind}`]} id={evId} data-evidence>
+                <div class="inner">
+                  <p class="ev-note label item" style="--i: -1">
+                    {ev.note}
+                  </p>
+                  {ev.kind === 'clippings' && (
+                    <ul>
+                      {ev.items.map((c, j) => (
+                        <li class="item" style={`--i: ${j}`}>
+                          <span class="time">{c.time}</span>
+                          <span class="text">{c.text}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                  {ev.kind === 'cascade' && (
+                    <ol>
+                      {ev.items.map((q, j) => (
+                        <li class="item" style={`--i: ${j}`} data-kind={q.kind ?? 'question'}>
+                          {q.text}
+                        </li>
+                      ))}
+                    </ol>
+                  )}
+                  {ev.kind === 'ledger' && (
+                    <ul>
+                      {ev.items.map((r, j) => (
+                        <li class="item" style={`--i: ${j}`}>
+                          <span class="figure">{r.figure}</span>
+                          <span class="text">{r.text}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              </div>
+            )}
+          </li>
+        );
+      })
+    }
+  </ol>
+</section>
+
+<style>
+  /* ------------------------------------------------------------------
+     Component tokens (alias the semantic layer in global.css)
+  ------------------------------------------------------------------- */
+  .chain {
+    --vine-stroke: var(--accent-soft);
+    --vine-width: 1.25px;
+    --vine-gutter: 2.4rem;
+    --vine-label-ink: var(--ink-faint);
+    --ev-ink: var(--ink-secondary);
+    --ev-line: var(--line);
+    --ev-accent: var(--accent);
+    --ev-surface: var(--bg);
+    --bubble-pad-x: clamp(1.75rem, 4vw, 3.25rem);
+    --bubble-pad-y: clamp(1.75rem, 3.5vw, 2.75rem);
+    --ev-enter: 380ms;
+    --ev-exit: 180ms;
+
+    position: relative;
+    margin-top: clamp(4rem, 9vh, 6rem);
+    padding-bottom: clamp(5rem, 10vh, 8rem);
+  }
+
+  .probe {
+    position: absolute;
+    visibility: hidden;
+    width: var(--vine-gutter);
+    height: 0;
+  }
+
+  .vh {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+
+  /* ------------------------------------------------------------------
+     The vine
+  ------------------------------------------------------------------- */
+  .vine {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+    pointer-events: none;
+  }
+
+  .vine stop {
+    stop-color: var(--vine-stroke);
+  }
+
+  .vine [data-strokes] {
+    fill: none;
+    stroke: var(--vine-stroke);
+    stroke-width: var(--vine-width);
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  .vine :global(.tendril) {
+    opacity: 0.7;
+  }
+
+  .vine-labels {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+  }
+
+  .vine-label {
+    position: absolute;
+    font-family: var(--font-mono);
+    font-style: italic;
+    font-size: 0.8125rem;
+    letter-spacing: 0.03em;
+    color: var(--vine-label-ink);
+    white-space: nowrap;
+    transform: translateY(-50%);
+    opacity: 0;
+    transition: opacity var(--dur-3) var(--ease-out);
+  }
+
+  .vine-label.is-lit {
+    opacity: 1;
+  }
+
+  /* ------------------------------------------------------------------
+     Composition: a 12-column field with a gutter column for the line.
+     Nothing sits in the same place twice.
+  ------------------------------------------------------------------- */
+  .moments {
+    display: grid;
+    grid-template-columns: minmax(2.75rem, 4rem) repeat(12, minmax(0, 1fr));
+  }
+
+  .moment {
+    position: relative;
+  }
+
+  .place-left {
+    grid-column: 2 / span 7;
+  }
+
+  .place-right {
+    grid-column: 6 / span 7;
+    margin-top: clamp(7rem, 16vh, 11rem);
+  }
+
+  .moment-hdfc {
+    margin-top: clamp(8rem, 18vh, 12.5rem);
+  }
+
+  .place-thought {
+    grid-column: 4 / span 7;
+    margin-top: clamp(9rem, 20vh, 14rem);
+    padding: var(--bubble-pad-y) var(--bubble-pad-x);
+  }
+
+  .place-thought .body {
+    max-width: 29rem;
+  }
+
+  .place-close {
+    grid-column: 2 / span 8;
+    margin-top: clamp(8rem, 18vh, 12rem);
+  }
+
+  .body {
+    max-width: 31rem;
+  }
+
+  .heading {
+    font-size: clamp(1.5rem, 1.2rem + 1.35vw, 2.25rem);
+    font-weight: 440;
+    line-height: 1.16;
+    letter-spacing: -0.012em;
+  }
+
+  .place-thought .heading {
+    font-style: italic;
+    font-weight: 420;
+    font-size: clamp(1.375rem, 1.1rem + 1.05vw, 1.9rem);
+  }
+
+  .detail {
+    margin-top: 1rem;
+    color: var(--ink-secondary);
+    max-width: 30rem;
+    text-wrap: pretty;
+  }
+
+  /* the marked term: the site's asterisk means "there is more, if you want it" */
+  .term {
+    display: inline;
+    color: inherit;
+    text-decoration: underline;
+    text-decoration-style: dotted;
+    text-decoration-thickness: 1px;
+    text-decoration-color: var(--accent-soft);
+    text-underline-offset: 0.24em;
+    cursor: help;
+    padding: 0.5em 0.12em;
+    margin: -0.5em -0.12em;
+    transition: text-decoration-color var(--dur-1) var(--ease-out), color var(--dur-1) var(--ease-out);
+  }
+
+  .term:hover,
+  .term:focus-visible,
+  .is-open .term {
+    color: var(--ink);
+    text-decoration-color: var(--accent);
+  }
+
+  /* the hit area is generous; the ring should still hug the word */
+  .term:focus-visible {
+    outline-offset: -0.34em;
+  }
+
+  .term sup {
+    color: var(--accent);
+    font-size: 0.68em;
+    line-height: 0;
+    margin-left: 0.06em;
+    font-family: var(--font-display);
+  }
+
+  /* ------------------------------------------------------------------
+     Evidence: what curiosity turns up. Absent until asked for.
+  ------------------------------------------------------------------- */
+  .evidence {
+    position: absolute;
+    top: 3.4rem;
+    width: 17rem;
+    pointer-events: none;
+    visibility: hidden;
+    transition: visibility 0s linear calc(var(--ev-exit) + 60ms);
+  }
+
+  /* to the right of the text column, whatever width the column ended up */
+  .ev-clippings,
+  .ev-ledger {
+    left: min(calc(100% + 1.5rem), 32.5rem);
+  }
+
+  .ev-clippings {
+    width: 20rem;
+  }
+
+  .ev-cascade {
+    right: calc(100% + 4.25rem);
+    width: 16rem;
+    top: 3rem;
+  }
+
+  .moment.is-open .evidence,
+  .moment:has(.term:hover) .evidence,
+  .moment:has(.term:focus-visible) .evidence {
+    visibility: visible;
+    transition-delay: 0s;
+  }
+
+  .item {
+    opacity: 0;
+    transform: translateY(6px);
+    transition:
+      opacity var(--ev-exit) var(--ease-out),
+      transform var(--ev-exit) var(--ease-out);
+  }
+
+  .moment.is-open .item,
+  .moment:has(.term:hover) .item,
+  .moment:has(.term:focus-visible) .item {
+    opacity: 1;
+    transform: none;
+    transition:
+      opacity var(--ev-enter) var(--ease-out) calc(140ms + var(--i) * 70ms),
+      transform var(--ev-enter) var(--ease-out) calc(140ms + var(--i) * 70ms);
+  }
+
+  .ev-note {
+    font-size: 0.65rem;
+    margin-bottom: 0.4rem;
+  }
+
+  /* clippings: a wire feed that cannot make up its mind */
+  .ev-clippings .item:not(.ev-note) {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 0 0.65rem;
+    margin-top: 0.55rem;
+    padding-top: 0.45rem;
+    border-top: 1px solid var(--ev-line);
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    line-height: 1.45;
+    color: var(--ev-ink);
+    transform-origin: left center;
+  }
+
+  .ev-clippings li:nth-child(odd) {
+    rotate: -0.6deg;
+  }
+
+  .ev-clippings li:nth-child(even) {
+    rotate: 0.45deg;
+    margin-left: 0.6rem;
+  }
+
+  .ev-clippings .time {
+    color: var(--ev-accent);
+    letter-spacing: 0.04em;
+  }
+
+  /* cascade: each question caused by the last */
+  .ev-cascade .item:not(.ev-note) {
+    position: relative;
+    margin-top: 0.3rem;
+    margin-left: calc(var(--i) * 0.85rem);
+    font-style: italic;
+    font-size: 1rem;
+    line-height: 1.45;
+    color: var(--ev-ink);
+  }
+
+  .ev-cascade .item:not(.ev-note):not(:first-child)::before {
+    content: '↳';
+    position: absolute;
+    left: -1.05rem;
+    top: 0.1em;
+    font-family: var(--font-mono);
+    font-style: normal;
+    font-size: 0.72rem;
+    color: var(--ink-faint);
+  }
+
+  .ev-cascade .item:not(.ev-note):last-child {
+    color: var(--ink);
+  }
+
+  /* ledger: the work, in figures */
+  .ev-ledger .item:not(.ev-note) {
+    display: grid;
+    grid-template-columns: 2.6rem 1fr;
+    align-items: baseline;
+    gap: 0 0.7rem;
+    padding: 0.55rem 0;
+    border-top: 1px solid var(--ev-line);
+  }
+
+  .ev-ledger .figure {
+    font-family: var(--font-display);
+    font-size: 1.5rem;
+    font-weight: 400;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.02em;
+    line-height: 1;
+    color: var(--ink);
+  }
+
+  .ev-ledger .text {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    line-height: 1.45;
+    color: var(--ev-ink);
+  }
+
+  /* tabs: live inside the thought, along its lower edge */
+  .ev-tabs {
+    position: static;
+    width: auto;
+    visibility: visible;
+    margin-top: 1.5rem;
+    height: 1.8rem;
+    overflow: visible;
+  }
+
+  .tabstrip {
+    display: flex;
+    align-items: flex-end;
+    height: 100%;
+    border-bottom: 1px solid var(--line-faint);
+  }
+
+  /* tabs behave like tabs: the more there are, the less of each you can read */
+  .ev-tabs .item {
+    position: relative;
+    z-index: calc(20 - var(--i));
+    flex: 0 1 auto;
+    min-width: 0;
+    max-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-left: -7px;
+    padding: 0.2rem 0 0.24rem;
+    border: 1px solid var(--ev-line);
+    border-bottom: 0;
+    border-radius: 5px 5px 0 0;
+    background: var(--ev-surface);
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    letter-spacing: 0.02em;
+    line-height: 1.3;
+    white-space: nowrap;
+    color: var(--ev-ink);
+    transition:
+      opacity var(--ev-exit) var(--ease-out),
+      transform var(--ev-exit) var(--ease-out),
+      max-width var(--ev-exit) var(--ease-out),
+      padding var(--ev-exit) var(--ease-out);
+  }
+
+  .ev-tabs .item:first-child {
+    margin-left: 0;
+  }
+
+  .ev-tabs .item:last-child {
+    flex-shrink: 0;
+    font-style: italic;
+    color: var(--ink-faint);
+  }
+
+  /* the first few tabs are already open; the rest arrive on request */
+  .moment.is-lit .ev-tabs .item[data-default] {
+    opacity: 0.6;
+    transform: none;
+    max-width: 12rem;
+    padding-inline: 0.5rem;
+    transition-delay: calc(var(--i) * 90ms + 500ms);
+  }
+
+  .moment.is-open .ev-tabs .item,
+  .moment:has(.term:hover) .ev-tabs .item,
+  .moment:has(.term:focus-visible) .ev-tabs .item {
+    opacity: 1;
+    transform: none;
+    max-width: 12rem;
+    padding-inline: 0.5rem;
+    transition:
+      opacity var(--ev-enter) var(--ease-out) calc(var(--i) * 60ms),
+      transform var(--ev-enter) var(--ease-out) calc(var(--i) * 60ms),
+      max-width var(--dur-3) var(--ease-out) calc(var(--i) * 60ms),
+      padding var(--dur-3) var(--ease-out) calc(var(--i) * 60ms);
+  }
+
+  .moment.is-open .ev-tabs .item[data-default],
+  .moment:has(.term:hover) .ev-tabs .item[data-default],
+  .moment:has(.term:focus-visible) .ev-tabs .item[data-default] {
+    transition-delay: 0s;
+  }
+
+  /* ------------------------------------------------------------------
+     The product, at the end of the line
+  ------------------------------------------------------------------- */
+  .product {
+    margin-top: 1.7rem;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.35rem 1.4rem;
+  }
+
+  .product-name {
+    font-family: var(--font-display);
+    font-size: 1.2rem;
+    font-weight: 500;
+    letter-spacing: -0.005em;
+  }
+
+  .more {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 0.45em;
+    font-family: var(--font-mono);
+    font-size: 0.8125rem;
+    letter-spacing: 0.04em;
+    color: var(--accent);
+    text-decoration: none;
+    padding-block: 0.4rem;
+  }
+
+  .more-text {
+    background-image: linear-gradient(currentColor, currentColor);
+    background-size: 0% 1px;
+    background-repeat: no-repeat;
+    background-position: 0 100%;
+    padding-bottom: 2px;
+    transition: background-size var(--dur-2) var(--ease-out);
+  }
+
+  .more .arrow {
+    transition: transform var(--dur-2) var(--ease-out);
+  }
+
+  .more:hover .more-text,
+  .more:focus-visible .more-text {
+    background-size: 100% 1px;
+  }
+
+  .more:hover .arrow,
+  .more:focus-visible .arrow {
+    transform: translateX(4px);
+  }
+
+  .peek {
+    flex-basis: 100%;
+    display: flex;
+    gap: 0.9rem;
+    min-height: 1.3rem;
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    letter-spacing: 0.04em;
+    color: var(--ink-faint);
+  }
+
+  .peek li {
+    opacity: 0;
+    transform: translateX(-4px);
+    transition:
+      opacity var(--ev-exit) var(--ease-out),
+      transform var(--ev-exit) var(--ease-out);
+  }
+
+  .peek li + li::before {
+    content: '·';
+    margin-right: 0.9rem;
+  }
+
+  .product:has(.more:hover) .peek li,
+  .product:has(.more:focus-visible) .peek li {
+    opacity: 1;
+    transform: none;
+    transition-delay: calc(60ms + var(--i) * 60ms);
+  }
+
+  /* ------------------------------------------------------------------
+     Arrival: a moment appears once the line has reached it.
+  ------------------------------------------------------------------- */
+  :global(.js) .moment .body {
+    opacity: 0;
+    transform: translateY(10px);
+    transition:
+      opacity var(--dur-4) var(--ease-out),
+      transform var(--dur-4) var(--ease-out);
+  }
+
+  :global(.js) .moment.is-lit .body {
+    opacity: 1;
+    transform: none;
+  }
+
+  /* ------------------------------------------------------------------
+     Narrow screens: one column, the line keeps to the left margin,
+     evidence unfolds in place.
+  ------------------------------------------------------------------- */
+  @media (max-width: 960px) {
+    .chain {
+      --vine-gutter: 1.1rem;
+    }
+
+    .moments {
+      grid-template-columns: 1.65rem minmax(0, 1fr);
+    }
+
+    .place-left,
+    .place-right,
+    .place-close {
+      grid-column: 2;
+    }
+
+    .place-right {
+      margin-left: 9%;
+      margin-top: clamp(5.5rem, 13vh, 8rem);
+    }
+
+    .moment-hdfc {
+      margin-top: clamp(6rem, 14vh, 9rem);
+    }
+
+    .place-thought {
+      grid-column: 1 / -1;
+      margin-left: 0.85rem;
+      margin-top: clamp(7rem, 15vh, 10rem);
+      padding: 2.2rem 1.6rem 2rem;
+    }
+
+    .place-close {
+      margin-top: clamp(6rem, 14vh, 9rem);
+    }
+
+    .evidence:not(.ev-tabs) {
+      position: static;
+      width: auto;
+      display: grid;
+      grid-template-rows: 0fr;
+      margin-top: 0;
+      transition:
+        grid-template-rows var(--dur-3) var(--ease-out),
+        visibility 0s linear var(--dur-3);
+    }
+
+    .evidence:not(.ev-tabs) .inner {
+      min-height: 0;
+      overflow: hidden;
+    }
+
+    .moment.is-open .evidence:not(.ev-tabs),
+    .moment:has(.term:focus-visible) .evidence:not(.ev-tabs) {
+      grid-template-rows: 1fr;
+      transition-delay: 0s;
+    }
+
+    .moment.is-open .evidence:not(.ev-tabs) .inner {
+      padding-top: 1.1rem;
+    }
+
+    .ev-clippings li:nth-child(even) {
+      margin-left: 0;
+    }
+
+    .ev-cascade .item:not(.ev-note) {
+      margin-left: calc(var(--i) * 0.7rem + 1.1rem);
+    }
+
+    .ev-tabs {
+      height: auto;
+      margin-top: 1.3rem;
+    }
+
+    .tabstrip {
+      flex-wrap: wrap;
+      row-gap: 0.3rem;
+    }
+
+    .ev-tabs .item {
+      margin-left: -5px;
+    }
+  }
+
+  @media (max-width: 960px) and (hover: none) {
+    /* touch: hovering does not exist, so a sticky hover must not open things */
+    .moment:has(.term:hover):not(.is-open) .evidence:not(.ev-tabs) .item {
+      opacity: 0;
+      transform: translateY(6px);
+    }
+  }
+
+  /* reduced motion: nothing waits for the line (the script also draws it whole) */
+  @media (prefers-reduced-motion: reduce) {
+    :global(.js) .moment .body,
+    .vine-label {
+      opacity: 1;
+      transform: none;
+    }
+  }
+</style>
+
+<script>
+  type Pt = { x: number; y: number };
+  type Box = { left: number; top: number; right: number; bottom: number; width: number; height: number };
+
+  interface Stroke {
+    el: SVGGeometryElement;
+    len: number;
+    cur: number;
+    /** how much of this stroke should be drawn when the reader's line is at tipY */
+    at: (tipY: number) => number;
+  }
+
+  const root = document.querySelector<HTMLElement>('[data-chain]');
+  if (root) init(root);
+
+  function init(root: HTMLElement) {
+    const svg = root.querySelector<SVGSVGElement>('[data-vine]')!;
+    const group = svg.querySelector<SVGGElement>('[data-strokes]')!;
+    const gradIn = svg.querySelector<SVGLinearGradientElement>('[data-grad="in"]')!;
+    const gradOut = svg.querySelector<SVGLinearGradientElement>('[data-grad="out"]')!;
+    const probe = root.querySelector<HTMLElement>('[data-probe]')!;
+    const momentEls = Array.from(root.querySelectorAll<HTMLElement>('[data-moment]'));
+    const labelEls = Array.from(root.querySelectorAll<HTMLElement>('[data-label]'));
+    const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    let strokes: Stroke[] = [];
+    let lights: Array<{ el: HTMLElement; y: number }> = [];
+    let rootTop = 0;
+    let tip = 0;
+    let raf = 0;
+
+    const NS = 'http://www.w3.org/2000/svg';
+    const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
+    const lerp = (a: Pt, b: Pt, t: number): Pt => ({ x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t });
+    const dist = (a: Pt, b: Pt) => Math.hypot(b.x - a.x, b.y - a.y);
+    const fmt = (n: number) => n.toFixed(1);
+
+    /* ---- centripetal Catmull-Rom → cubic Béziers -------------------- */
+    type Seg = { a: Pt; c1: Pt; c2: Pt; b: Pt };
+
+    function segment(p0: Pt, p1: Pt, p2: Pt, p3: Pt): Seg {
+      const d1 = Math.sqrt(dist(p0, p1));
+      const d2 = Math.sqrt(dist(p1, p2));
+      const d3 = Math.sqrt(dist(p2, p3));
+      let c1 = p1;
+      let c2 = p2;
+      if (d1 > 1e-4 && d2 > 1e-4) {
+        const a = d1 * d1, b = d2 * d2;
+        const k = 3 * d1 * (d1 + d2);
+        c1 = {
+          x: (a * p2.x - b * p0.x + (2 * a + 3 * d1 * d2 + b) * p1.x) / k,
+          y: (a * p2.y - b * p0.y + (2 * a + 3 * d1 * d2 + b) * p1.y) / k,
+        };
+      }
+      if (d3 > 1e-4 && d2 > 1e-4) {
+        const a = d3 * d3, b = d2 * d2;
+        const k = 3 * d3 * (d3 + d2);
+        c2 = {
+          x: (a * p1.x - b * p3.x + (2 * a + 3 * d3 * d2 + b) * p2.x) / k,
+          y: (a * p1.y - b * p3.y + (2 * a + 3 * d3 * d2 + b) * p2.y) / k,
+        };
+      }
+      return { a: p1, c1, c2, b: p2 };
+    }
+
+    function splineOpen(pts: Pt[]): Seg[] {
+      const segs: Seg[] = [];
+      for (let i = 0; i < pts.length - 1; i++) {
+        segs.push(segment(pts[Math.max(0, i - 1)], pts[i], pts[i + 1], pts[Math.min(pts.length - 1, i + 2)]));
+      }
+      return segs;
+    }
+
+    function splineClosed(pts: Pt[]): Seg[] {
+      const n = pts.length;
+      const segs: Seg[] = [];
+      for (let i = 0; i < n; i++) {
+        segs.push(segment(pts[(i - 1 + n) % n], pts[i], pts[(i + 1) % n], pts[(i + 2) % n]));
+      }
+      return segs;
+    }
+
+    const reverse = (segs: Seg[]): Seg[] =>
+      segs.map((s) => ({ a: s.b, c1: s.c2, c2: s.c1, b: s.a })).reverse();
+
+    function d(segs: Seg[]): string {
+      if (!segs.length) return '';
+      let out = `M${fmt(segs[0].a.x)} ${fmt(segs[0].a.y)}`;
+      for (const s of segs) {
+        out += `C${fmt(s.c1.x)} ${fmt(s.c1.y)} ${fmt(s.c2.x)} ${fmt(s.c2.y)} ${fmt(s.b.x)} ${fmt(s.b.y)}`;
+      }
+      return out;
+    }
+
+    /* ---- element helpers ------------------------------------------- */
+    function path(dAttr: string, cls?: string): SVGPathElement {
+      const el = document.createElementNS(NS, 'path');
+      el.setAttribute('d', dAttr);
+      if (cls) el.setAttribute('class', cls);
+      group.appendChild(el);
+      return el;
+    }
+
+    function circle(c: Pt, r: number): SVGCircleElement {
+      const el = document.createElementNS(NS, 'circle');
+      el.setAttribute('cx', fmt(c.x));
+      el.setAttribute('cy', fmt(c.y));
+      el.setAttribute('r', fmt(r));
+      group.appendChild(el);
+      return el;
+    }
+
+    /** running-max-y table so a stroke is drawn as far as the reader has got */
+    function tableFor(el: SVGGeometryElement, len: number) {
+      const table: Array<{ l: number; y: number }> = [];
+      let maxY = -Infinity;
+      const step = 5;
+      for (let l = 0; l <= len; l += step) {
+        const p = el.getPointAtLength(Math.min(l, len));
+        maxY = Math.max(maxY, p.y);
+        table.push({ l, y: maxY });
+      }
+      table.push({ l: len, y: maxY });
+      return (tipY: number) => {
+        if (tipY < table[0].y) return 0;
+        let lo = 0, hi = table.length - 1;
+        while (lo < hi) {
+          const mid = (lo + hi + 1) >> 1;
+          if (table[mid].y <= tipY) lo = mid;
+          else hi = mid - 1;
+        }
+        return table[lo].l;
+      };
+    }
+
+    function nearestLength(el: SVGGeometryElement, len: number, target: Pt): number {
+      let best = 0, bestD = Infinity;
+      for (let l = 0; l <= len; l += 4) {
+        const p = el.getPointAtLength(l);
+        const dd = (p.x - target.x) ** 2 + (p.y - target.y) ** 2;
+        if (dd < bestD) { bestD = dd; best = l; }
+      }
+      return best;
+    }
+
+    type Spot = Pt & { align: 'left' | 'right' | 'center' };
+
+    /**
+     * A spot beside the line: the point nearest `near`, pushed off the line
+     * toward `prefer`. Text anchors on the edge nearest the line so it never
+     * sits across it.
+     */
+    function beside(el: SVGGeometryElement, len: number, near: Pt, prefer: Pt, gap: number): Spot {
+      const s = nearestLength(el, len, near);
+      const p = el.getPointAtLength(s);
+      const q = el.getPointAtLength(Math.min(len, s + 3));
+      const tl = Math.hypot(q.x - p.x, q.y - p.y) || 1;
+      let n = { x: -(q.y - p.y) / tl, y: (q.x - p.x) / tl };
+      if (n.x * prefer.x + n.y * prefer.y < 0) n = { x: -n.x, y: -n.y };
+      const align = Math.abs(n.x) < 0.35 ? 'center' : n.x > 0 ? 'left' : 'right';
+      return { x: p.x + n.x * gap, y: p.y + n.y * gap, align };
+    }
+
+    function addStroke(el: SVGGeometryElement, at: (tipY: number) => number, cls?: string) {
+      const len = el.getTotalLength();
+      el.setAttribute('stroke-dasharray', `${fmt(len)} ${fmt(len + 12)}`);
+      el.setAttribute('stroke-dashoffset', fmt(len));
+      if (cls) el.classList.add(cls);
+      strokes.push({ el, len, cur: 0, at });
+    }
+
+    function tendril(on: SVGGeometryElement, at: number, prefer: Pt) {
+      const p = on.getPointAtLength(at);
+      const q = on.getPointAtLength(at + 2);
+      const tl = Math.hypot(q.x - p.x, q.y - p.y) || 1;
+      const t = { x: (q.x - p.x) / tl, y: (q.y - p.y) / tl };
+      let n = { x: -t.y, y: t.x };
+      if (n.x * prefer.x + n.y * prefer.y < 0) n = { x: -n.x, y: -n.y };
+      const pts: Pt[] = [
+        { x: p.x, y: p.y },
+        { x: p.x + n.x * 11 + t.x * 12, y: p.y + n.y * 11 + t.y * 12 },
+        { x: p.x + n.x * 26 + t.x * 14, y: p.y + n.y * 26 + t.y * 14 },
+        { x: p.x + n.x * 38 + t.x * 6, y: p.y + n.y * 38 + t.y * 6 },
+        { x: p.x + n.x * 42 - t.x * 8, y: p.y + n.y * 42 - t.y * 8 },
+      ];
+      const el = path(d(splineOpen(pts)), 'tendril');
+      addStroke(el, (tipY) => clamp((tipY - (p.y - 6)) / 56, 0, 1) * el.getTotalLength());
+    }
+
+    /* ---- layout → geometry ------------------------------------------ */
+    function build() {
+      group.textContent = '';
+      strokes = [];
+      lights = [];
+
+      const rootRect = root.getBoundingClientRect();
+      rootTop = rootRect.top + scrollY;
+      const W = root.clientWidth;
+      const H = root.clientHeight;
+      svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+      svg.setAttribute('width', String(W));
+      svg.setAttribute('height', String(H));
+
+      const gutter = probe.offsetWidth || 32;
+      const rel = (r: DOMRect): Box => ({
+        left: r.left - rootRect.left,
+        top: r.top - rootRect.top,
+        right: r.right - rootRect.left,
+        bottom: r.bottom - rootRect.top,
+        width: r.width,
+        height: r.height,
+      });
+
+      const info = momentEls.map((li) => {
+        const body = li.querySelector<HTMLElement>('.body')!;
+        const head = li.querySelector<HTMLElement>('[data-anchor]')!;
+        const box = rel(li.getBoundingClientRect());
+        // offsets, not client rects: an unlit body is still translated by its reveal transform
+        const b: Box = {
+          left: box.left + body.offsetLeft,
+          top: box.top + body.offsetTop,
+          right: box.left + body.offsetLeft + body.offsetWidth,
+          bottom: box.top + body.offsetTop + body.offsetHeight,
+          width: body.offsetWidth,
+          height: body.offsetHeight,
+        };
+        const h = { top: b.top + head.getBoundingClientRect().top - body.getBoundingClientRect().top };
+        const lh = parseFloat(getComputedStyle(head).lineHeight) || parseFloat(getComputedStyle(head).fontSize) * 1.2;
+        const spine = b.left - gutter;
+        return {
+          li,
+          id: li.dataset.moment!,
+          place: li.dataset.place!,
+          box,
+          b,
+          spine,
+          A: { x: spine, y: h.top + lh / 2 } as Pt,
+          // depart below everything in the block, including evidence unfolded in place
+          D: { x: spine + 3, y: Math.max(b.bottom, box.bottom) - 6 } as Pt,
+        };
+      });
+
+      const byId = Object.fromEntries(info.map((m) => [m.id, m]));
+      const m1 = byId.markets, m2 = byId.reading, m3 = byId.hdfc, m4 = byId.thought, m5 = byId.uaa;
+      if (!m1 || !m2 || !m3 || !m4 || !m5) throw new Error('chain: unexpected moments');
+
+      /** where each connector word sits */
+      const labelAt: Record<string, Spot> = {};
+      const nearLabel: Record<string, { near: Pt; prefer: Pt }> = {};
+
+      /* the main line: markets → reading → hdfc, then it starts to wonder */
+      const pts: Pt[] = [];
+      const start = { x: m1.A.x + 24, y: m1.A.y - 96 };
+      pts.push(start, { x: m1.A.x + 5, y: m1.A.y - 44 }, m1.A);
+      pts.push({ x: m1.spine - 6, y: (m1.A.y + m1.D.y) / 2 }, m1.D);
+
+      // a curl on the way to the right-hand column: one period of a prolate
+      // cycloid, so the line genuinely crosses itself
+      {
+        const dx = m2.A.x - m1.D.x, dy = m2.A.y - m1.D.y;
+        pts.push({ x: m1.D.x + dx * 0.08, y: m1.D.y + dy * 0.3 });
+        const c = { x: m1.D.x + dx * 0.46, y: m1.D.y + dy * 0.6 };
+        const L = Math.hypot(dx, dy) || 1;
+        const u = { x: dx / L, y: dy / L };
+        let v = { x: u.y, y: -u.x };
+        if (v.y > 0) v = { x: -v.x, y: -v.y };
+        const s = clamp(dy * 0.03, 4, 6), k = 3.6;
+        for (let i = 0; i <= 12; i++) {
+          const t = -Math.PI + (i / 12) * 2 * Math.PI;
+          const a = s * (t - k * Math.sin(t));
+          const b = s * k * Math.cos(t);
+          pts.push({ x: c.x + u.x * a + v.x * b, y: c.y + u.y * a + v.y * b });
+        }
+        const q = { x: m2.A.x - 16, y: m2.A.y - clamp(dy * 0.22, 52, 96) };
+        pts.push(q);
+        nearLabel.reading = { near: q, prefer: { x: 1, y: -0.2 } };
+      }
+      pts.push(m2.A, { x: m2.spine - 6, y: (m2.A.y + m2.D.y) / 2 }, m2.D);
+
+      // a long sweep back to the left
+      let sweepMid: Pt;
+      {
+        const dx = m3.A.x - m2.D.x, dy = m3.A.y - m2.D.y;
+        pts.push({ x: m2.D.x + dx * 0.06, y: m2.D.y + dy * 0.36 });
+        sweepMid = { x: m2.D.x + dx * 0.6, y: m2.D.y + dy * 0.62 };
+        pts.push(sweepMid);
+        const q = { x: m3.A.x + 14, y: m3.A.y - clamp(dy * 0.22, 52, 96) };
+        pts.push(q);
+        nearLabel.hdfc = { near: lerp(sweepMid, q, 0.3), prefer: { x: 0.4, y: 1 } };
+      }
+      pts.push(m3.A, { x: m3.spine - 6, y: (m3.A.y + m3.D.y) / 2 }, m3.D);
+
+      /* the thought: an outline around the fourth moment */
+      const R = m4.box;
+      const C = { x: R.left + R.width / 2, y: R.top + R.height / 2 };
+      const ax = R.width / 2 + 8, by = R.height / 2 + 6;
+      // as round as the text allows: the body's corners must stay inside the outline
+      const cu = Math.max(Math.abs(m4.b.left - C.x), Math.abs(m4.b.right - C.x)) / ax;
+      const cv = Math.max(Math.abs(m4.b.top - C.y), Math.abs(m4.b.bottom - C.y)) / by;
+      let n = 2.8;
+      while (n < 5 && cu ** n + cv ** n > 0.86) n += 0.2;
+      const outlinePoint = (th: number): Pt => {
+        const ct = Math.cos(th), st = Math.sin(th);
+        const wob = 1 + 0.024 * Math.sin(3 * th + 1.3) + 0.014 * Math.sin(7 * th + 0.4);
+        return {
+          x: C.x + ax * Math.sign(ct) * Math.abs(ct) ** (2 / n) * wob,
+          y: C.y + by * Math.sign(st) * Math.abs(st) ** (2 / n) * wob,
+        };
+      };
+      /** N points around the outline from `from`, evenly spaced by arc length */
+      const ringFrom = (from: number, N: number): Pt[] => {
+        const dense: Pt[] = [];
+        const M = 360;
+        for (let i = 0; i <= M; i++) dense.push(outlinePoint(from + (i / M) * Math.PI * 2));
+        const cum = [0];
+        for (let i = 1; i <= M; i++) cum.push(cum[i - 1] + dist(dense[i - 1], dense[i]));
+        const total = cum[M];
+        const out: Pt[] = [];
+        let j = 0;
+        for (let k = 0; k < N; k++) {
+          const target = (k / N) * total;
+          while (j < M && cum[j + 1] < target) j++;
+          const t = cum[j + 1] === cum[j] ? 0 : (target - cum[j]) / (cum[j + 1] - cum[j]);
+          out.push(lerp(dense[j], dense[j + 1], t));
+        }
+        return out;
+      };
+      const thetaT = Math.atan2(R.top - 8 - C.y, R.left + R.width * 0.22 - C.x);
+      const Tb = outlinePoint(thetaT);
+
+      // the line trails off toward the thought
+      pts.push(lerp(m3.D, Tb, 0.13));
+
+      const main = path(d(splineOpen(pts)));
+      const mainLen = main.getTotalLength();
+      addStroke(main, tableFor(main, mainLen));
+      main.style.stroke = 'url(#vine-in)';
+      gradIn.setAttribute('x1', fmt(start.x));
+      gradIn.setAttribute('x2', fmt(start.x));
+      gradIn.setAttribute('y1', fmt(start.y));
+      gradIn.setAttribute('y2', fmt(start.y + 80));
+
+      tendril(main, nearestLength(main, mainLen, sweepMid) - 26, { x: -0.4, y: -1 });
+      for (const id of ['reading', 'hdfc']) {
+        const { near, prefer } = nearLabel[id];
+        labelAt[id] = beside(main, mainLen, near, prefer, 20);
+      }
+
+      // three small circles, growing, on the way to the thought
+      const fr = [0.34, 0.58, 0.8], rr = [2.4, 3.8, 5.8];
+      const dir = { x: Tb.x - m3.D.x, y: Tb.y - m3.D.y };
+      const dl = Math.hypot(dir.x, dir.y) || 1;
+      const nrm = { x: -dir.y / dl, y: dir.x / dl };
+      let secondDot: Pt = Tb;
+      fr.forEach((f, i) => {
+        const off = (i % 2 ? -1 : 1) * 5;
+        const c = lerp(m3.D, Tb, f);
+        c.x += nrm.x * off;
+        c.y += nrm.y * off;
+        if (i === 1) secondDot = c;
+        const el = circle(c, rr[i]);
+        addStroke(el, (tipY) => clamp((tipY - (c.y - rr[i] - 30)) / 36, 0, 1) * el.getTotalLength());
+      });
+      labelAt.thought = { x: secondDot.x + rr[1] + 14, y: secondDot.y - 2, align: 'left' };
+
+      // the outline grows from where the dots arrive, both ways at once
+      const N = 32;
+      const ring = ringFrom(thetaT, N);
+      const segs = splineClosed(ring);
+      const half = Math.floor(N / 2);
+      const cw = path(d(segs.slice(0, half)));
+      const ccw = path(d(reverse(segs.slice(half))));
+      const ringAt = (el: SVGGeometryElement) => (tipY: number) =>
+        clamp((tipY - (R.top - 14)) / (R.height + 26), 0, 1) * el.getTotalLength();
+      addStroke(cw, ringAt(cw));
+      addStroke(ccw, ringAt(ccw));
+
+      /* out of the thought, down to the thing that got built */
+      const thetaE = Math.atan2(R.bottom + 8 - C.y, R.left + R.width * 0.3 - C.x);
+      const E = outlinePoint(thetaE);
+      const out: Pt[] = [E, { x: E.x - 18, y: E.y + 26 }];
+      const dx = m5.A.x - E.x, dy = m5.A.y - E.y;
+      const mid = { x: E.x + dx * 0.46, y: E.y + dy * 0.44 };
+      out.push(mid);
+      const q5 = { x: m5.A.x + 14, y: m5.A.y - dy * 0.18 };
+      out.push(q5, m5.A, { x: m5.spine - 5, y: (m5.A.y + m5.D.y) / 2 }, m5.D);
+      const tailEnd = { x: m5.D.x + 5, y: m5.D.y + 104 };
+      out.push({ x: m5.D.x - 7, y: m5.D.y + 56 }, tailEnd);
+      const exit = path(d(splineOpen(out)));
+      const exitLen = exit.getTotalLength();
+      addStroke(exit, tableFor(exit, exitLen));
+      exit.style.stroke = 'url(#vine-out)';
+      gradOut.setAttribute('x1', fmt(tailEnd.x));
+      gradOut.setAttribute('x2', fmt(tailEnd.x));
+      gradOut.setAttribute('y1', fmt(tailEnd.y - 96));
+      gradOut.setAttribute('y2', fmt(tailEnd.y));
+      labelAt.uaa = beside(exit, exitLen, mid, { x: 0.6, y: 1 }, 20);
+
+      tendril(exit, nearestLength(exit, exitLen, mid) - 48, { x: 0.6, y: -1 });
+
+      /* labels sit just off the line; moments light when the line arrives */
+      for (const el of labelEls) {
+        const spot = labelAt[el.dataset.label!];
+        if (!spot) continue;
+        const w = el.offsetWidth;
+        let left = spot.align === 'left' ? spot.x : spot.align === 'right' ? spot.x - w : spot.x - w / 2;
+        left = clamp(left, 4, Math.max(4, W - w - 4));
+        el.style.left = `${fmt(left)}px`;
+        el.style.top = `${fmt(spot.y)}px`;
+        lights.push({ el, y: spot.y });
+      }
+      for (const m of info) {
+        const y = m.place === 'thought' ? R.top + R.height * 0.42 : m.A.y - 4;
+        lights.push({ el: m.li, y });
+      }
+
+      tip = targetTip();
+      if (reduced) {
+        for (const s of strokes) {
+          s.cur = s.len;
+          s.el.setAttribute('stroke-dashoffset', '0');
+        }
+        for (const l of lights) l.el.classList.add('is-lit');
+      } else {
+        render(true);
+      }
+    }
+
+    const targetTip = () => scrollY + innerHeight * 0.62 - rootTop;
+
+    function render(snap = false) {
+      let settled = true;
+      for (const s of strokes) {
+        const target = s.at(tip);
+        if (snap) s.cur = target;
+        else s.cur += (target - s.cur) * 0.16;
+        if (Math.abs(target - s.cur) > 0.3) settled = false;
+        else s.cur = target;
+        s.el.setAttribute('stroke-dashoffset', fmt(s.len - s.cur));
+        s.el.style.opacity = s.cur < 0.5 ? '0' : '';
+      }
+      for (const l of lights) {
+        if (tip >= l.y) l.el.classList.add('is-lit');
+      }
+      return settled;
+    }
+
+    function tick() {
+      raf = 0;
+      if (!render()) raf = requestAnimationFrame(tick);
+    }
+
+    function onScroll() {
+      if (reduced) return;
+      tip = targetTip();
+      if (!raf) raf = requestAnimationFrame(tick);
+    }
+
+    function safeBuild() {
+      try {
+        build();
+      } catch (err) {
+        console.error(err);
+        for (const li of momentEls) li.classList.add('is-lit');
+        for (const el of labelEls) el.classList.add('is-lit');
+      }
+    }
+
+    safeBuild();
+    addEventListener('scroll', onScroll, { passive: true });
+
+    let pending = 0;
+    const ro = new ResizeObserver(() => {
+      cancelAnimationFrame(pending);
+      pending = requestAnimationFrame(() => {
+        safeBuild();
+        onScroll();
+      });
+    });
+    ro.observe(root);
+    document.fonts?.ready.then(() => {
+      safeBuild();
+      onScroll();
+    });
+
+    /* ---- evidence: hover shows, click or Enter pins, Escape lets go ---- */
+    const triggers = Array.from(root.querySelectorAll<HTMLElement>('[data-trigger]'));
+    const setOpen = (btn: HTMLElement, open: boolean) => {
+      btn.closest('.moment')?.classList.toggle('is-open', open);
+      btn.setAttribute('aria-expanded', String(open));
+    };
+    for (const btn of triggers) {
+      btn.addEventListener('click', () => setOpen(btn, btn.getAttribute('aria-expanded') !== 'true'));
+      btn.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          setOpen(btn, btn.getAttribute('aria-expanded') !== 'true');
+        }
+      });
+    }
+    addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') for (const btn of triggers) setOpen(btn, false);
+    });
+  }
+</script>

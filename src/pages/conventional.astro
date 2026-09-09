@@ -1,0 +1,27 @@
+---
+import Base from '../layouts/Base.astro';
+import SectionIntro from '../components/SectionIntro.astro';
+import Scaffold from '../components/Scaffold.astro';
+---
+
+<Base
+  title="The conventional version"
+  description="The chronological, professional account. Education, experience, the résumé."
+>
+  <div class="wrap">
+    <SectionIntro num="08" title="The conventional version">
+      <p>
+        The chronological, professional account: education, experience, accomplishments. It’s
+        accurate. It’s just not the whole story, which is what the rest of this site is for.
+      </p>
+    </SectionIntro>
+    <Scaffold
+      items={[
+        { name: 'Education', hint: 'the institutions' },
+        { name: 'Experience', hint: 'the letterhead version' },
+        { name: 'The résumé itself', hint: 'a well-behaved PDF, eventually' },
+      ]}
+      note="Being written. The structure above is real; the content arrives in a later phase."
+    />
+  </div>
+</Base>

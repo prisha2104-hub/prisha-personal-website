@@ -1,0 +1,194 @@
+---
+import { sections } from '../data/sections';
+import Mark from './Mark.astro';
+
+interface Props {
+  currentPath: string;
+}
+
+const { currentPath } = Astro.props;
+const normalize = (p: string) => p.replace(/\/+$/, '') || '/';
+const current = normalize(currentPath);
+---
+
+<div class="menu" id="site-menu" role="dialog" aria-modal="true" aria-label="Site index" hidden>
+  <div class="wrap menu-bar">
+    <span class="label">Index</span>
+    <button class="draw-link close-btn" type="button" data-menu-close>Close</button>
+  </div>
+  <nav class="wrap menu-nav" aria-label="Sections">
+    <ol>
+      {
+        sections.map((s, i) => {
+          const active = normalize(s.slug) === current;
+          return (
+            <li style={`--i: ${i}`}>
+              <a href={s.slug} aria-current={active ? 'page' : undefined}>
+                <span class="num">{s.num}</span>
+                <span class="title">{s.title}</span>
+                {active && (
+                  <span class="here" aria-hidden="true">
+                    <Mark size={11} />
+                  </span>
+                )}
+              </a>
+            </li>
+          );
+        })
+      }
+    </ol>
+  </nav>
+</div>
+
+<style>
+  .menu {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    background: var(--bg);
+    overflow-y: auto;
+    opacity: 0;
+    transition: opacity var(--dur-2) var(--ease-out);
+  }
+
+  .menu.is-open {
+    opacity: 1;
+  }
+
+  .menu-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-block: 1.5rem;
+  }
+
+  .close-btn {
+    color: var(--ink);
+  }
+
+  .menu-nav {
+    padding-block: clamp(1.5rem, 6vh, 4rem) 4rem;
+  }
+
+  li {
+    border-top: 1px solid var(--line-faint);
+    opacity: 0;
+    transform: translateY(14px);
+    transition: opacity var(--dur-3) var(--ease-out), transform var(--dur-3) var(--ease-out);
+  }
+
+  li:last-child {
+    border-bottom: 1px solid var(--line-faint);
+  }
+
+  .menu.is-open li {
+    opacity: 1;
+    transform: none;
+    transition-delay: calc(70ms + var(--i) * 35ms);
+  }
+
+  a {
+    display: grid;
+    grid-template-columns: 3.4rem 1fr auto;
+    align-items: baseline;
+    gap: 1rem;
+    padding-block: clamp(0.7rem, 1.8vh, 1.1rem);
+    text-decoration: none;
+  }
+
+  .num {
+    font-family: var(--font-mono);
+    font-size: var(--text-label);
+    letter-spacing: 0.16em;
+    color: var(--ink-faint);
+    transition: color var(--dur-1) var(--ease-out);
+  }
+
+  .title {
+    font-family: var(--font-display);
+    font-size: clamp(1.5rem, 1.15rem + 2.4vw, 2.4rem);
+    font-weight: 430;
+    letter-spacing: -0.01em;
+    line-height: 1.15;
+    transition: transform var(--dur-2) var(--ease-out);
+  }
+
+  a:hover .title,
+  a:focus-visible .title {
+    transform: translateX(10px);
+  }
+
+  a:hover .num,
+  a:focus-visible .num {
+    color: var(--accent);
+  }
+
+  a[aria-current='page'] .num {
+    color: var(--accent);
+  }
+
+  .here {
+    color: var(--accent);
+    align-self: center;
+  }
+</style>
+
+<script>
+  const menu = document.getElementById('site-menu');
+  const openBtn = document.querySelector<HTMLButtonElement>('[data-menu-open]');
+  const closeBtn = menu?.querySelector<HTMLButtonElement>('[data-menu-close]');
+  let restoreFocus: HTMLElement | null = null;
+
+  const focusables = () =>
+    Array.from(menu?.querySelectorAll<HTMLElement>('a[href], button') ?? []);
+
+  const onKeydown = (e: KeyboardEvent) => {
+    if (e.key === 'Escape') {
+      close();
+      return;
+    }
+    if (e.key !== 'Tab') return;
+    const items = focusables();
+    if (!items.length) return;
+    const first = items[0];
+    const last = items[items.length - 1];
+    if (e.shiftKey && document.activeElement === first) {
+      e.preventDefault();
+      last.focus();
+    } else if (!e.shiftKey && document.activeElement === last) {
+      e.preventDefault();
+      first.focus();
+    }
+  };
+
+  const open = () => {
+    if (!menu) return;
+    restoreFocus = document.activeElement as HTMLElement | null;
+    menu.hidden = false;
+    requestAnimationFrame(() => menu.classList.add('is-open'));
+    document.documentElement.classList.add('menu-open');
+    openBtn?.setAttribute('aria-expanded', 'true');
+    document.addEventListener('keydown', onKeydown);
+    closeBtn?.focus();
+  };
+
+  const close = () => {
+    if (!menu || menu.hidden) return;
+    menu.classList.remove('is-open');
+    document.documentElement.classList.remove('menu-open');
+    openBtn?.setAttribute('aria-expanded', 'false');
+    document.removeEventListener('keydown', onKeydown);
+    const finish = () => {
+      menu.hidden = true;
+    };
+    if (matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      finish();
+    } else {
+      setTimeout(finish, 300);
+    }
+    restoreFocus?.focus();
+  };
+
+  openBtn?.addEventListener('click', open);
+  closeBtn?.addEventListener('click', close);
+</script>

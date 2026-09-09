@@ -1,0 +1,24 @@
+---
+import Base from '../layouts/Base.astro';
+import SectionIntro from '../components/SectionIntro.astro';
+import Scaffold from '../components/Scaffold.astro';
+---
+
+<Base title="What I build" description="Questions that got out of hand.">
+  <div class="wrap">
+    <SectionIntro num="05" title="What I build">
+      <p>Things that started as questions and got out of hand.</p>
+    </SectionIntro>
+    <Scaffold
+      items={[
+        {
+          name: 'Universal Asset Analyzer',
+          hint: 'investment research, unfragmented · in progress',
+          href: '/uaa',
+        },
+        { name: 'Whatever comes next', hint: 'usually announces itself' },
+      ]}
+      note="Proper write-ups, with decisions and dead ends, arrive in a later phase."
+    />
+  </div>
+</Base>

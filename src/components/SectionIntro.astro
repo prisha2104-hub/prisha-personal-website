@@ -1,0 +1,39 @@
+---
+interface Props {
+  num: string;
+  title: string;
+}
+
+const { num, title } = Astro.props;
+---
+
+<header class="section-intro">
+  <p class="label">{num} / 09</p>
+  <h1>{title}</h1>
+  <div class="lede prose">
+    <slot />
+  </div>
+</header>
+
+<style>
+  .section-intro {
+    padding-top: clamp(3.5rem, 9vh, 6.5rem);
+  }
+
+  h1 {
+    margin-top: 1.4rem;
+    font-size: var(--text-h2);
+    max-width: 22ch;
+  }
+
+  .lede {
+    margin-top: 1.8rem;
+    font-size: var(--text-lede);
+    line-height: 1.5;
+    color: var(--ink-secondary);
+  }
+
+  .lede :global(em) {
+    color: var(--ink);
+  }
+</style>

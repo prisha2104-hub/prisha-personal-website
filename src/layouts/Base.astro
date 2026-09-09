@@ -1,0 +1,109 @@
+---
+import '@fontsource-variable/fraunces/full.css';
+import '@fontsource-variable/fraunces/full-italic.css';
+import '@fontsource-variable/newsreader/opsz.css';
+import '@fontsource-variable/newsreader/opsz-italic.css';
+import '@fontsource/ibm-plex-mono/400.css';
+import '@fontsource/ibm-plex-mono/400-italic.css';
+import '@fontsource/ibm-plex-mono/500.css';
+import '../styles/global.css';
+import Header from '../components/Header.astro';
+import Menu from '../components/Menu.astro';
+import Footer from '../components/Footer.astro';
+
+interface Props {
+  title?: string;
+  description?: string;
+  home?: boolean;
+}
+
+const {
+  title = 'Prisha Agarwal',
+  description = 'A personal corner of the internet, arranged by curiosity rather than chronology.',
+  home = false,
+} = Astro.props;
+
+const pageTitle = home ? 'Prisha Agarwal' : `${title} — Prisha Agarwal`;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{pageTitle}</title>
+    <meta name="description" content={description} />
+    <meta name="generator" content={Astro.generator} />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="theme-color" content="#f6f3ec" />
+    <script is:inline>
+      (() => {
+        const root = document.documentElement;
+        root.classList.add('js');
+        let theme = 'light';
+        try {
+          const saved = localStorage.getItem('theme');
+          theme =
+            saved === 'dark' || saved === 'light'
+              ? saved
+              : matchMedia('(prefers-color-scheme: dark)').matches
+                ? 'dark'
+                : 'light';
+        } catch (_) {}
+        root.dataset.theme = theme;
+        const meta = document.querySelector('meta[name="theme-color"]');
+        if (meta) meta.setAttribute('content', theme === 'dark' ? '#171411' : '#f6f3ec');
+      })();
+    </script>
+  </head>
+  <body>
+    <a class="skip" href="#main">Skip to content</a>
+    <Header home={home} />
+    <Menu currentPath={Astro.url.pathname} />
+    <main id="main">
+      <slot />
+    </main>
+    <Footer />
+    <script>
+      const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+      const targets = document.querySelectorAll('[data-reveal]');
+      if (reduced || !('IntersectionObserver' in window)) {
+        targets.forEach((el) => el.classList.add('is-revealed'));
+      } else {
+        const io = new IntersectionObserver(
+          (entries) => {
+            for (const entry of entries) {
+              if (entry.isIntersecting) {
+                entry.target.classList.add('is-revealed');
+                io.unobserve(entry.target);
+              }
+            }
+          },
+          { threshold: 0.15, rootMargin: '0px 0px -8% 0px' }
+        );
+        targets.forEach((el) => io.observe(el));
+      }
+    </script>
+    <style>
+      .skip {
+        position: fixed;
+        top: 0.75rem;
+        left: 0.75rem;
+        z-index: 100;
+        background: var(--bg-raised);
+        border: 1px solid var(--line);
+        padding: 0.6rem 0.95rem;
+        font-family: var(--font-mono);
+        font-size: var(--text-label);
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        text-decoration: none;
+        transform: translateY(-200%);
+      }
+
+      .skip:focus-visible {
+        transform: none;
+      }
+    </style>
+  </body>
+</html>

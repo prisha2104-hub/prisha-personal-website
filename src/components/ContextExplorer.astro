@@ -1,0 +1,447 @@
+---
+import { Image } from 'astro:assets';
+import Mark from './Mark.astro';
+import { control, lenses, plates } from '../data/contexts';
+
+const plateAlts: Record<string, string> = {
+  portrait: control.alt,
+  student: lenses.find((l) => l.plate === 'student')?.alt ?? '',
+  newyork: lenses.find((l) => l.plate === 'newyork')?.alt ?? '',
+  markets: lenses.find((l) => l.plate === 'markets')?.alt ?? '',
+  foodie: lenses.find((l) => l.plate === 'foodie')?.alt ?? '',
+};
+
+const plateEntries = Object.entries(plates) as Array<
+  [keyof typeof plates, (typeof plates)[keyof typeof plates]]
+>;
+
+const lensPayload = JSON.stringify({
+  control: { fig: control.fig, caption: control.caption, plate: control.plate },
+  lenses: Object.fromEntries(
+    lenses.map((l) => [l.id, { fig: l.fig, caption: l.caption, plate: l.plate }])
+  ),
+});
+---
+
+<section class="explorer" data-explorer>
+  <div class="lens-col">
+    <p class="label lens-heading">The lenses</p>
+    <div class="lenses" role="group" aria-label="Ways of looking at the same person">
+      <span class="marker" data-marker aria-hidden="true"><Mark size={11} /></span>
+      {
+        lenses.map((lens) => (
+          <button class="lens" type="button" data-lens-btn={lens.id} aria-pressed="false">
+            <span class="ghost" aria-hidden="true">
+              <Mark size={11} />
+            </span>
+            <span class="lens-label">{lens.label}</span>
+          </button>
+        ))
+      }
+    </div>
+    <p class="grind">More lenses being ground — Mumbai, among others.</p>
+  </div>
+
+  <figure class="stage-col">
+    <div class="stage" data-stage>
+      {
+        plateEntries.map(([key, img]) => (
+          <Image
+            class:list={['plate', { 'is-active': key === 'portrait' }]}
+            data-plate={key}
+            src={img}
+            alt={plateAlts[key]}
+            aria-hidden={key === 'portrait' ? undefined : 'true'}
+            widths={[480, 760, 1024]}
+            sizes="(max-width: 900px) 94vw, 480px"
+            loading={key === 'portrait' ? 'eager' : 'lazy'}
+          />
+        ))
+      }
+      {
+        lenses
+          .filter((l) => l.annotations?.length)
+          .map((lens) => (
+            <div class="notes" data-notes={lens.id}>
+              {lens.annotations!.map((a, i) => (
+                <span class={`anno anno-${a.pos}`} style={`--d: ${i}`}>
+                  {a.text}
+                </span>
+              ))}
+            </div>
+          ))
+      }
+    </div>
+    <figcaption class="fig" data-fig>
+      <span class="fig-num label" data-fig-num>{control.fig}</span>
+      <span class="fig-line" data-fig-line aria-live="polite">{control.caption}</span>
+    </figcaption>
+  </figure>
+
+  <script is:inline type="application/json" data-lens-data set:html={lensPayload} />
+</section>
+
+<style>
+  .explorer {
+    display: grid;
+    grid-template-columns: minmax(13rem, 18rem) minmax(0, 1fr);
+    gap: clamp(2.5rem, 6vw, 5.5rem);
+    margin-top: clamp(3rem, 8vh, 5rem);
+    align-items: start;
+  }
+
+  .lens-heading {
+    margin-bottom: 1.3rem;
+  }
+
+  .lenses {
+    position: relative;
+    border-top: 1px solid var(--line-faint);
+  }
+
+  .lens {
+    position: relative;
+    display: block;
+    width: 100%;
+    text-align: left;
+    padding: 0.8rem 0 0.8rem 1.7rem;
+    border-bottom: 1px solid var(--line-faint);
+  }
+
+  .lens-label {
+    display: inline-block;
+    font-family: var(--font-display);
+    font-size: clamp(1.25rem, 1.05rem + 0.7vw, 1.5rem);
+    font-weight: 440;
+    letter-spacing: -0.01em;
+    line-height: 1.2;
+    transition: transform var(--dur-2) var(--ease-out), color var(--dur-1) var(--ease-out);
+  }
+
+  .lens:hover .lens-label,
+  .lens:focus-visible .lens-label {
+    transform: translateX(6px);
+  }
+
+  .lens.is-active .lens-label {
+    font-style: italic;
+    color: var(--accent);
+  }
+
+  .ghost,
+  .marker {
+    position: absolute;
+    left: 0.15rem;
+    display: inline-flex;
+    color: var(--accent);
+  }
+
+  .ghost {
+    top: 50%;
+    translate: 0 -50%;
+    opacity: 0;
+    transition: opacity var(--dur-2) var(--ease-out);
+  }
+
+  .lens:hover .ghost,
+  .lens:focus-visible .ghost {
+    opacity: 0.32;
+  }
+
+  .lens.is-active .ghost {
+    opacity: 0;
+  }
+
+  .marker {
+    top: 0;
+    z-index: 1;
+    opacity: 0;
+    transform: scale(0.4) rotate(-90deg);
+    transition:
+      top var(--dur-3) var(--ease-out),
+      opacity var(--dur-2) var(--ease-out),
+      transform var(--dur-3) var(--ease-out);
+    pointer-events: none;
+  }
+
+  .marker.is-shown {
+    opacity: 1;
+    transform: none;
+  }
+
+  .marker.snap {
+    transition: opacity var(--dur-2) var(--ease-out), transform var(--dur-3) var(--ease-out);
+  }
+
+  .grind {
+    margin-top: 1.7rem;
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    letter-spacing: 0.05em;
+    color: var(--ink-faint);
+  }
+
+  .stage-col {
+    margin: 0;
+    max-width: min(30rem, calc((100vh - 13rem) * 0.8));
+    width: 100%;
+  }
+
+  .stage {
+    position: relative;
+    aspect-ratio: 4 / 5;
+    overflow: hidden;
+    border: 1px solid var(--line);
+    background: var(--bg-raised);
+  }
+
+  .plate {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    opacity: 0;
+    transition: opacity 460ms var(--ease-out);
+  }
+
+  .plate.is-active {
+    opacity: 1;
+  }
+
+  .plate[data-plate='markets'] {
+    object-position: 50% 0%;
+  }
+
+  .notes {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+  }
+
+  .anno {
+    position: absolute;
+    max-width: 62%;
+    font-family: var(--font-mono);
+    font-size: 0.71rem;
+    letter-spacing: 0.04em;
+    line-height: 1.45;
+    color: var(--ink);
+    background: color-mix(in srgb, var(--bg) 90%, transparent);
+    border: 1px solid var(--line);
+    padding: 0.32rem 0.55rem;
+    opacity: 0;
+    transform: rotate(var(--tilt, 0deg)) translateY(7px);
+    transition: opacity var(--dur-3) var(--ease-out), transform var(--dur-3) var(--ease-out);
+  }
+
+  .anno-tl {
+    top: 4.5%;
+    left: 5%;
+    --tilt: -0.9deg;
+  }
+
+  .anno-tr {
+    top: 4.5%;
+    right: 5%;
+    text-align: right;
+    --tilt: 0.7deg;
+  }
+
+  .anno-bl {
+    bottom: 5%;
+    left: 5%;
+    --tilt: 0.8deg;
+  }
+
+  .anno-br {
+    bottom: 5%;
+    right: 5%;
+    text-align: right;
+    --tilt: -0.7deg;
+  }
+
+  .notes.is-on .anno {
+    opacity: 1;
+    transform: rotate(var(--tilt, 0deg));
+    transition-delay: calc(160ms + var(--d) * 150ms);
+  }
+
+  .fig {
+    display: block;
+    margin-top: 1.15rem;
+  }
+
+  .fig-num,
+  .fig-line {
+    display: block;
+    transition: opacity var(--dur-2) var(--ease-out), transform var(--dur-2) var(--ease-out);
+  }
+
+  .fig-line {
+    margin-top: 0.5rem;
+    font-style: italic;
+    color: var(--ink-secondary);
+    font-size: clamp(1rem, 0.95rem + 0.3vw, 1.125rem);
+    max-width: 30rem;
+    text-wrap: pretty;
+  }
+
+  .fig.swap .fig-num,
+  .fig.swap .fig-line {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+
+  @media (max-width: 900px) {
+    .explorer {
+      display: block;
+    }
+
+    .lenses {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.1rem 1.6rem;
+      border-top: 0;
+    }
+
+    .lens {
+      width: auto;
+      border-bottom: 0;
+      padding: 0.35rem 0;
+    }
+
+    .ghost,
+    .marker {
+      display: none;
+    }
+
+    .lens-label {
+      font-size: 1.25rem;
+    }
+
+    .lens.is-active .lens-label {
+      text-decoration: underline;
+      text-decoration-thickness: 1.5px;
+      text-underline-offset: 0.35em;
+      text-decoration-color: var(--accent);
+    }
+
+    .grind {
+      margin-top: 1.1rem;
+    }
+
+    .stage-col {
+      margin-top: 2rem;
+      max-width: 100%;
+    }
+
+    .anno {
+      font-size: 0.66rem;
+      max-width: 70%;
+    }
+  }
+</style>
+
+<script>
+  const root = document.querySelector<HTMLElement>('[data-explorer]');
+
+  if (root) {
+    const dataEl = root.querySelector<HTMLScriptElement>('[data-lens-data]');
+    const data = JSON.parse(dataEl?.textContent ?? '{}') as {
+      control: { fig: string; caption: string; plate: string };
+      lenses: Record<string, { fig: string; caption: string; plate: string }>;
+    };
+
+    const buttons = Array.from(root.querySelectorAll<HTMLButtonElement>('[data-lens-btn]'));
+    const platesEls = Array.from(root.querySelectorAll<HTMLElement>('[data-plate]'));
+    const notesEls = Array.from(root.querySelectorAll<HTMLElement>('[data-notes]'));
+    const marker = root.querySelector<HTMLElement>('[data-marker]');
+    const fig = root.querySelector<HTMLElement>('[data-fig]');
+    const figNum = root.querySelector<HTMLElement>('[data-fig-num]');
+    const figLine = root.querySelector<HTMLElement>('[data-fig-line]');
+    const reduced = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    let active: string | null = null;
+
+    const setCaption = (figText: string, line: string) => {
+      if (!fig || !figNum || !figLine) return;
+      if (reduced()) {
+        figNum.textContent = figText;
+        figLine.textContent = line;
+        return;
+      }
+      fig.classList.add('swap');
+      setTimeout(() => {
+        figNum.textContent = figText;
+        figLine.textContent = line;
+        fig.classList.remove('swap');
+      }, 180);
+    };
+
+    const placeMarker = (btn: HTMLButtonElement, instant: boolean) => {
+      if (!marker) return;
+      const top = btn.offsetTop + btn.offsetHeight / 2 - marker.offsetHeight / 2;
+      if (instant) {
+        marker.classList.add('snap');
+        marker.style.top = `${top}px`;
+        void marker.offsetHeight;
+        marker.classList.remove('snap');
+      } else {
+        marker.style.top = `${top}px`;
+      }
+    };
+
+    const apply = (id: string | null) => {
+      const wasActive = active;
+      active = id;
+      const entry = id ? data.lenses[id] : data.control;
+
+      buttons.forEach((btn) => {
+        const on = btn.dataset.lensBtn === id;
+        btn.classList.toggle('is-active', on);
+        btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+      });
+
+      platesEls.forEach((plate) => {
+        const on = plate.dataset.plate === entry.plate;
+        plate.classList.toggle('is-active', on);
+        if (on) plate.removeAttribute('aria-hidden');
+        else plate.setAttribute('aria-hidden', 'true');
+      });
+
+      notesEls.forEach((notes) => {
+        notes.classList.toggle('is-on', notes.dataset.notes === id);
+      });
+
+      if (marker) {
+        if (id) {
+          const btn = buttons.find((b) => b.dataset.lensBtn === id);
+          if (btn) placeMarker(btn, wasActive === null);
+          marker.classList.add('is-shown');
+        } else {
+          marker.classList.remove('is-shown');
+        }
+      }
+
+      setCaption(entry.fig, entry.caption);
+    };
+
+    buttons.forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const id = btn.dataset.lensBtn ?? null;
+        apply(active === id ? null : id);
+      });
+    });
+
+    let raf = 0;
+    addEventListener('resize', () => {
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(() => {
+        if (!active) return;
+        const btn = buttons.find((b) => b.dataset.lensBtn === active);
+        if (btn) placeMarker(btn, true);
+      });
+    });
+  }
+</script>

@@ -1,0 +1,140 @@
+---
+import { sections } from '../data/sections';
+
+const items = sections.filter((s) => s.slug !== '/');
+---
+
+<nav class="index" aria-label="Site index">
+  <p class="label">An index, of sorts</p>
+  <ol>
+    {
+      items.map((s) => (
+        <li>
+          <a href={s.slug}>
+            <span class="num">{s.num}</span>
+            <span class="title">{s.title}</span>
+            <span class="blurb">{s.blurb}</span>
+            <span class="arrow" aria-hidden="true">
+              →
+            </span>
+          </a>
+        </li>
+      ))
+    }
+  </ol>
+</nav>
+
+<style>
+  .label {
+    margin-bottom: 1.4rem;
+  }
+
+  li {
+    border-top: 1px solid var(--line-faint);
+  }
+
+  li:last-child {
+    border-bottom: 1px solid var(--line-faint);
+  }
+
+  a {
+    display: grid;
+    grid-template-columns: 3.4rem minmax(0, max-content) 1fr 1.6rem;
+    align-items: baseline;
+    gap: 1.1rem;
+    padding-block: 1.05rem;
+    text-decoration: none;
+  }
+
+  .num {
+    font-family: var(--font-mono);
+    font-size: var(--text-label);
+    letter-spacing: 0.16em;
+    color: var(--ink-faint);
+    transition: color var(--dur-1) var(--ease-out);
+  }
+
+  .title {
+    font-family: var(--font-display);
+    font-size: clamp(1.25rem, 1.1rem + 0.75vw, 1.55rem);
+    font-weight: 440;
+    letter-spacing: -0.01em;
+    line-height: 1.2;
+    transition: transform var(--dur-2) var(--ease-out);
+  }
+
+  .blurb {
+    text-align: right;
+    font-style: italic;
+    color: var(--ink-secondary);
+    font-size: var(--text-small);
+    line-height: 1.4;
+  }
+
+  .arrow {
+    font-family: var(--font-mono);
+    font-size: 0.9rem;
+    color: var(--ink-faint);
+    justify-self: end;
+    transition: transform var(--dur-2) var(--ease-out), color var(--dur-1) var(--ease-out);
+  }
+
+  a:hover .title,
+  a:focus-visible .title {
+    transform: translateX(7px);
+  }
+
+  a:hover .num,
+  a:focus-visible .num {
+    color: var(--accent);
+  }
+
+  a:hover .arrow,
+  a:focus-visible .arrow {
+    transform: translateX(5px);
+    color: var(--accent);
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    .blurb {
+      opacity: 0;
+      transform: translateX(-7px);
+      transition: opacity var(--dur-2) var(--ease-out), transform var(--dur-2) var(--ease-out);
+    }
+
+    a:hover .blurb,
+    a:focus-visible .blurb {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  @media (max-width: 680px) {
+    a {
+      grid-template-columns: 2.6rem 1fr 1.6rem;
+      row-gap: 0.3rem;
+      align-items: center;
+    }
+
+    .num {
+      grid-row: 1;
+    }
+
+    .title {
+      grid-column: 2;
+      grid-row: 1;
+    }
+
+    .arrow {
+      grid-column: 3;
+      grid-row: 1;
+    }
+
+    .blurb {
+      grid-column: 2 / 4;
+      text-align: left;
+      font-size: 0.875rem;
+      color: var(--ink-faint);
+    }
+  }
+</style>

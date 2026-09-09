@@ -1,0 +1,37 @@
+---
+import Base from '../layouts/Base.astro';
+---
+
+<Base title="Not found" description="There’s no page here.">
+  <div class="wrap lost">
+    <p class="label">?? / 09</p>
+    <h1>There’s no page here.</h1>
+    <p class="copy prose">
+      Either the URL drifted, or I haven’t built this room yet. Both are plausible.
+    </p>
+    <a class="draw-link back" href="/">Back to the index</a>
+  </div>
+</Base>
+
+<style>
+  .lost {
+    padding-top: clamp(4rem, 14vh, 9rem);
+  }
+
+  h1 {
+    margin-top: 1.4rem;
+    font-size: var(--text-h2);
+  }
+
+  .copy {
+    margin-top: 1.6rem;
+    color: var(--ink-secondary);
+    font-size: var(--text-lede);
+  }
+
+  .back {
+    display: inline-block;
+    margin-top: 2.6rem;
+    color: var(--ink);
+  }
+</style>

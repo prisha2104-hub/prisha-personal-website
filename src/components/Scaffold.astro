@@ -1,0 +1,133 @@
+---
+interface Item {
+  name: string;
+  hint: string;
+  /** when the eventual page already exists somewhere */
+  href?: string;
+}
+
+interface Props {
+  heading?: string;
+  items: Item[];
+  note?: string;
+}
+
+const { heading = 'The eventual shape of this page', items, note } = Astro.props;
+---
+
+<section class="scaffold">
+  <p class="label">{heading}</p>
+  <ul>
+    {
+      items.map((item) => (
+        <li>
+          {item.href ? (
+            <a class="name" href={item.href}>
+              {item.name} <span class="arrow" aria-hidden="true">→</span>
+            </a>
+          ) : (
+            <span class="name">{item.name}</span>
+          )}
+          <span class="leader" aria-hidden="true" />
+          <span class="hint">{item.hint}</span>
+        </li>
+      ))
+    }
+  </ul>
+  {note && <p class="scaffold-note">{note}</p>}
+</section>
+
+<style>
+  .scaffold {
+    margin-top: clamp(3rem, 8vh, 5rem);
+    max-width: var(--prose-max);
+  }
+
+  ul {
+    margin-top: 1.5rem;
+  }
+
+  li {
+    display: flex;
+    align-items: baseline;
+    gap: 1rem;
+    padding-block: 0.85rem;
+  }
+
+  li + li {
+    border-top: 0;
+  }
+
+  .name {
+    font-family: var(--font-display);
+    font-size: 1.125rem;
+    font-weight: 460;
+    letter-spacing: -0.005em;
+    flex-shrink: 0;
+  }
+
+  a.name {
+    text-decoration: none;
+    transition: color var(--dur-1) var(--ease-out);
+  }
+
+  a.name .arrow {
+    display: inline-block;
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    color: var(--ink-faint);
+    transition: transform var(--dur-2) var(--ease-out), color var(--dur-1) var(--ease-out);
+  }
+
+  a.name:hover,
+  a.name:focus-visible {
+    color: var(--accent);
+  }
+
+  a.name:hover .arrow,
+  a.name:focus-visible .arrow {
+    transform: translateX(4px);
+    color: var(--accent);
+  }
+
+  .leader {
+    flex: 1;
+    min-width: 2rem;
+    border-bottom: 1px dotted var(--line);
+    transform: translateY(-0.3em);
+  }
+
+  .hint {
+    font-style: italic;
+    color: var(--ink-secondary);
+    font-size: var(--text-small);
+    text-align: right;
+    max-width: 55%;
+    line-height: 1.45;
+  }
+
+  .scaffold-note {
+    margin-top: 2.2rem;
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    letter-spacing: 0.04em;
+    color: var(--ink-faint);
+  }
+
+  @media (max-width: 540px) {
+    li {
+      flex-wrap: wrap;
+      row-gap: 0.15rem;
+    }
+
+    .leader {
+      display: none;
+    }
+
+    .hint {
+      flex-basis: 100%;
+      text-align: left;
+      max-width: none;
+    }
+  }
+</style>

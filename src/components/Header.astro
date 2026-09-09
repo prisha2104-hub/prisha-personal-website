@@ -1,0 +1,74 @@
+---
+import Mark from './Mark.astro';
+import ThemeToggle from './ThemeToggle.astro';
+
+interface Props {
+  home?: boolean;
+}
+
+const { home = false } = Astro.props;
+---
+
+<header class="site-header">
+  <div class="wrap bar">
+    <a class="wordmark" href="/" aria-label="Prisha Agarwal — home">
+      <span class="mark"><Mark size={13} /></span>
+      {!home && <span class="name">Prisha Agarwal</span>}
+    </a>
+    <div class="controls">
+      <button
+        class="draw-link index-btn"
+        type="button"
+        aria-haspopup="dialog"
+        aria-expanded="false"
+        data-menu-open>Index</button
+      >
+      <ThemeToggle />
+    </div>
+  </div>
+</header>
+
+<style>
+  .site-header {
+    padding-block: 1.5rem;
+  }
+
+  .bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .wordmark {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.65rem;
+    text-decoration: none;
+    font-family: var(--font-mono);
+    font-size: var(--text-label);
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--ink);
+  }
+
+  .mark {
+    color: var(--accent);
+    display: inline-flex;
+    transition: transform var(--dur-3) var(--ease-out);
+  }
+
+  .wordmark:hover .mark,
+  .wordmark:focus-visible .mark {
+    transform: rotate(90deg);
+  }
+
+  .controls {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+  }
+
+  .index-btn {
+    color: var(--ink);
+  }
+</style>

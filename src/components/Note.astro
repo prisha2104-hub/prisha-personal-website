@@ -1,0 +1,76 @@
+---
+interface Props {
+  id: string;
+  note: string;
+}
+
+const { id, note } = Astro.props;
+---
+
+<span class="note">
+  <span class="term" tabindex="0" aria-describedby={id}><slot /><sup aria-hidden="true">*</sup></span>
+  <span class="card" role="note" id={id}>{note}</span>
+</span>
+
+<style>
+  .note {
+    position: relative;
+  }
+
+  .term {
+    text-decoration: underline;
+    text-decoration-style: dotted;
+    text-decoration-thickness: 1px;
+    text-decoration-color: var(--accent-soft);
+    text-underline-offset: 0.24em;
+    cursor: help;
+    transition: text-decoration-color var(--dur-1) var(--ease-out);
+  }
+
+  .note:hover .term,
+  .note:focus-within .term {
+    text-decoration-color: var(--accent);
+  }
+
+  sup {
+    color: var(--accent);
+    font-size: 0.68em;
+    line-height: 0;
+    margin-left: 0.06em;
+    font-family: var(--font-display);
+  }
+
+  .card {
+    position: absolute;
+    top: calc(100% + 0.6rem);
+    left: 50%;
+    transform: translate(-50%, 5px);
+    width: max-content;
+    max-width: min(17rem, 74vw);
+    background: var(--bg-raised);
+    border: 1px solid var(--line);
+    box-shadow: var(--shadow-soft);
+    padding: 0.7rem 0.9rem;
+    font-size: 0.875rem;
+    font-style: italic;
+    font-weight: 440;
+    line-height: 1.5;
+    color: var(--ink-secondary);
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    z-index: 10;
+    transition:
+      opacity var(--dur-2) var(--ease-out),
+      transform var(--dur-2) var(--ease-out),
+      visibility 0s linear var(--dur-2);
+  }
+
+  .note:hover .card,
+  .note:focus-within .card {
+    opacity: 1;
+    visibility: visible;
+    transform: translate(-50%, 0);
+    transition-delay: 0s, 0s, 0s;
+  }
+</style>

@@ -1,0 +1,78 @@
+---
+import Mark from './Mark.astro';
+
+const year = new Date().getFullYear();
+---
+
+<footer class="site-footer">
+  <div class="wrap grid">
+    <div class="left">
+      <p class="sig">
+        <span class="mark"><Mark size={12} /></span>
+        <span>Prisha Agarwal</span>
+      </p>
+      <p class="quip">Written, designed, and second-guessed in New York.</p>
+    </div>
+    <div class="right">
+      <p class="label">09 — Footer</p>
+      <p class="meta">
+        Set in Fraunces, Newsreader, and IBM Plex Mono. No analytics, no cookies. © {year}
+      </p>
+    </div>
+  </div>
+</footer>
+
+<style>
+  .site-footer {
+    border-top: 1px solid var(--line-faint);
+    margin-top: clamp(4rem, 10vh, 7rem);
+    padding-block: 2.6rem 3.2rem;
+  }
+
+  .grid {
+    display: flex;
+    justify-content: space-between;
+    gap: 2rem 4rem;
+    flex-wrap: wrap;
+  }
+
+  .sig {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.65rem;
+    font-family: var(--font-mono);
+    font-size: var(--text-label);
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+  }
+
+  .mark {
+    color: var(--accent);
+    display: inline-flex;
+  }
+
+  .quip {
+    margin-top: 0.85rem;
+    font-style: italic;
+    color: var(--ink-secondary);
+    font-size: var(--text-small);
+  }
+
+  .right {
+    text-align: right;
+  }
+
+  .meta {
+    margin-top: 0.85rem;
+    color: var(--ink-faint);
+    font-size: var(--text-small);
+    max-width: 24rem;
+    text-wrap: balance;
+  }
+
+  @media (max-width: 640px) {
+    .right {
+      text-align: left;
+    }
+  }
+</style>

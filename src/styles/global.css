@@ -1,0 +1,280 @@
+/* ------------------------------------------------------------------
+   Design tokens
+   Two themes: "paper" (light) and "ink" (dark). Neither is an
+   inversion of the other; both are tuned to stay warm and calm.
+------------------------------------------------------------------- */
+
+:root {
+  color-scheme: light;
+
+  /* color */
+  --bg: #f6f3ec;
+  --bg-raised: #fdfbf6;
+  --ink: #211d18;
+  --ink-secondary: #5d564c;
+  --ink-faint: #857d70;
+  --line: rgba(33, 29, 24, 0.16);
+  --line-faint: rgba(33, 29, 24, 0.09);
+  --accent: #a3441f;
+  --accent-strong: #863616;
+  --accent-soft: rgba(163, 68, 31, 0.55);
+  --shadow-soft: 0 10px 30px rgba(33, 29, 24, 0.08);
+
+  /* type */
+  --font-display: 'Fraunces Variable', 'Iowan Old Style', Georgia, serif;
+  --font-body: 'Newsreader Variable', 'Iowan Old Style', Georgia, serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+
+  --text-body: clamp(1.0625rem, 1rem + 0.3vw, 1.1875rem);
+  --text-lede: clamp(1.1875rem, 1.05rem + 0.65vw, 1.5rem);
+  --text-h1: clamp(2.625rem, 1.9rem + 3.2vw, 4.5rem);
+  --text-h2: clamp(1.75rem, 1.45rem + 1.4vw, 2.5rem);
+  --text-h3: clamp(1.25rem, 1.15rem + 0.5vw, 1.5rem);
+  --text-small: 0.9375rem;
+  --text-label: 0.71875rem;
+
+  /* motion */
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --dur-1: 150ms;
+  --dur-2: 260ms;
+  --dur-3: 450ms;
+  --dur-4: 700ms;
+
+  /* structure */
+  --wrap-max: 68rem;
+  --prose-max: 41rem;
+  --pad-x: clamp(1.25rem, 5vw, 3rem);
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+
+  --bg: #171411;
+  --bg-raised: #211d18;
+  --ink: #eae4d8;
+  --ink-secondary: #a89f90;
+  --ink-faint: #776f62;
+  --line: rgba(234, 228, 216, 0.18);
+  --line-faint: rgba(234, 228, 216, 0.09);
+  --accent: #d9835c;
+  --accent-strong: #e59b78;
+  --accent-soft: rgba(217, 131, 92, 0.55);
+  --shadow-soft: 0 10px 30px rgba(0, 0, 0, 0.35);
+}
+
+/* ------------------------------------------------------------------
+   Base
+------------------------------------------------------------------- */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: var(--text-body);
+  font-optical-sizing: auto;
+  font-weight: 420;
+  line-height: 1.62;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+}
+
+main {
+  flex: 1;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--font-display);
+  font-optical-sizing: auto;
+  font-weight: 430;
+  line-height: 1.08;
+  letter-spacing: -0.015em;
+  margin: 0;
+  text-wrap: balance;
+}
+
+p {
+  margin: 0;
+}
+
+a {
+  color: inherit;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+}
+
+img,
+svg {
+  display: block;
+  max-width: 100%;
+}
+
+ol,
+ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--accent) 24%, transparent);
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+  border-radius: 1px;
+}
+
+:root.menu-open {
+  overflow: hidden;
+}
+
+/* ------------------------------------------------------------------
+   Utilities
+------------------------------------------------------------------- */
+
+.wrap {
+  max-width: var(--wrap-max);
+  margin-inline: auto;
+  padding-inline: var(--pad-x);
+  width: 100%;
+}
+
+.label {
+  font-family: var(--font-mono);
+  font-size: var(--text-label);
+  font-weight: 400;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.prose {
+  max-width: var(--prose-max);
+}
+
+.prose p {
+  text-wrap: pretty;
+}
+
+.prose p + p {
+  margin-top: 1.1em;
+}
+
+.prose a {
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.22em;
+  text-decoration-color: var(--accent-soft);
+  transition: text-decoration-color var(--dur-1) var(--ease-out), color var(--dur-1) var(--ease-out);
+}
+
+.prose a:hover {
+  color: var(--accent);
+  text-decoration-color: var(--accent);
+}
+
+.prose em {
+  font-style: italic;
+}
+
+/* mono links that draw their underline on hover */
+.draw-link {
+  font-family: var(--font-mono);
+  font-size: var(--text-label);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  text-decoration: none;
+  background-image: linear-gradient(currentColor, currentColor);
+  background-size: 0% 1px;
+  background-repeat: no-repeat;
+  background-position: 0 100%;
+  padding-bottom: 2px;
+  transition: background-size var(--dur-2) var(--ease-out), color var(--dur-1) var(--ease-out);
+}
+
+.draw-link:hover,
+.draw-link:focus-visible {
+  background-size: 100% 1px;
+}
+
+/* ------------------------------------------------------------------
+   Reveal-on-scroll (opt-in via data-reveal; requires .js on <html>)
+------------------------------------------------------------------- */
+
+.js [data-reveal] {
+  opacity: 0;
+  transform: translateY(12px);
+  transition: opacity var(--dur-4) var(--ease-out), transform var(--dur-4) var(--ease-out);
+}
+
+.js [data-reveal].is-revealed {
+  opacity: 1;
+  transform: none;
+}
+
+/* ------------------------------------------------------------------
+   Theme change: circular reveal via the View Transitions API.
+   The clip-path animation itself is driven from ThemeToggle.
+------------------------------------------------------------------- */
+
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+::view-transition-old(root) {
+  z-index: 1;
+}
+
+::view-transition-new(root) {
+  z-index: 2;
+}
+
+/* ------------------------------------------------------------------
+   Reduced motion: everything arrives already settled.
+------------------------------------------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    transition-delay: 0s !important;
+    scroll-behavior: auto !important;
+  }
+
+  .js [data-reveal] {
+    opacity: 1;
+    transform: none;
+  }
+}

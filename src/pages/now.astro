@@ -1,0 +1,23 @@
+---
+import Base from '../layouts/Base.astro';
+import SectionIntro from '../components/SectionIntro.astro';
+import Scaffold from '../components/Scaffold.astro';
+---
+
+<Base title="Now" description="What I’m building, reading, and turning over at the moment.">
+  <div class="wrap">
+    <SectionIntro num="04" title="Now">
+      <p>A snapshot, not a monument. This page changes whenever things change, which is often.</p>
+    </SectionIntro>
+    <Scaffold
+      items={[
+        { name: 'Currently building', hint: 'Universal Asset Analyzer' },
+        { name: 'Currently reading', hint: 'to be confessed here' },
+        { name: 'Recently read', hint: 'with margin notes' },
+        { name: 'Learning', hint: 'in public, reluctantly' },
+        { name: 'Thinking about', hint: 'the open tabs of the mind' },
+      ]}
+      note="Being written. The structure above is real; the content arrives in a later phase."
+    />
+  </div>
+</Base>
