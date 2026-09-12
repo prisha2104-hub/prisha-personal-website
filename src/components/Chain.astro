@@ -259,7 +259,14 @@ const { moments } = Astro.props;
     margin-top: clamp(7rem, 16vh, 11rem);
   }
 
-  .moment-hdfc {
+  /* later stops shift a column so nothing sits in the same place twice */
+  .place-left ~ .place-left {
+    grid-column: 3 / span 7;
+    margin-top: clamp(8rem, 18vh, 12.5rem);
+  }
+
+  .place-right ~ .place-right {
+    grid-column: 5 / span 7;
     margin-top: clamp(8rem, 18vh, 12.5rem);
   }
 
@@ -276,6 +283,11 @@ const { moments } = Astro.props;
   .place-close {
     grid-column: 2 / span 8;
     margin-top: clamp(8rem, 18vh, 12rem);
+  }
+
+  .place-close ~ .place-close {
+    grid-column: 5 / span 8;
+    margin-top: clamp(7rem, 15vh, 10.5rem);
   }
 
   .body {
@@ -363,6 +375,18 @@ const { moments } = Astro.props;
     right: calc(100% + 4.25rem);
     width: 16rem;
     top: 3rem;
+  }
+
+  /* evidence opens into whichever side of the page the moment left empty */
+  .place-left .ev-cascade {
+    right: auto;
+    left: min(calc(100% + 1.5rem), 32.5rem);
+  }
+
+  .place-right .ev-ledger,
+  .place-right .ev-clippings {
+    left: auto;
+    right: calc(100% + 4.25rem);
   }
 
   .moment.is-open .evidence,
@@ -685,7 +709,9 @@ const { moments } = Astro.props;
       margin-top: clamp(5.5rem, 13vh, 8rem);
     }
 
-    .moment-hdfc {
+    .place-left ~ .place-left,
+    .place-right ~ .place-right {
+      grid-column: 2;
       margin-top: clamp(6rem, 14vh, 9rem);
     }
 
@@ -698,6 +724,12 @@ const { moments } = Astro.props;
 
     .place-close {
       margin-top: clamp(6rem, 14vh, 9rem);
+    }
+
+    .place-close ~ .place-close {
+      grid-column: 2;
+      margin-left: 7%;
+      margin-top: clamp(5.5rem, 13vh, 8rem);
     }
 
     .evidence:not(.ev-tabs) {
@@ -1009,63 +1041,69 @@ const { moments } = Astro.props;
         };
       });
 
-      const byId = Object.fromEntries(info.map((m) => [m.id, m]));
-      const m1 = byId.markets, m2 = byId.reading, m3 = byId.hdfc, m4 = byId.thought, m5 = byId.uaa;
-      if (!m1 || !m2 || !m3 || !m4 || !m5) throw new Error('chain: unexpected moments');
+      const spine = info.filter((m) => m.place === 'left' || m.place === 'right');
+      const thought = info.find((m) => m.place === 'thought');
+      const closes = info.filter((m) => m.place === 'close');
+      if (spine.length < 2 || !thought || !closes.length) throw new Error('chain: unexpected moments');
 
       /** where each connector word sits */
       const labelAt: Record<string, Spot> = {};
       const nearLabel: Record<string, { near: Pt; prefer: Pt }> = {};
 
-      /* the main line: markets → reading → hdfc, then it starts to wonder */
+      /* the main line: down the spine, one curl, then long sweeps */
       const pts: Pt[] = [];
-      const start = { x: m1.A.x + 24, y: m1.A.y - 96 };
-      pts.push(start, { x: m1.A.x + 5, y: m1.A.y - 44 }, m1.A);
-      pts.push({ x: m1.spine - 6, y: (m1.A.y + m1.D.y) / 2 }, m1.D);
+      const first = spine[0];
+      const start = { x: first.A.x + 24, y: first.A.y - 96 };
+      pts.push(start, { x: first.A.x + 5, y: first.A.y - 44 }, first.A);
+      pts.push({ x: first.spine - 6, y: (first.A.y + first.D.y) / 2 }, first.D);
 
-      // a curl on the way to the right-hand column: one period of a prolate
-      // cycloid, so the line genuinely crosses itself
-      {
-        const dx = m2.A.x - m1.D.x, dy = m2.A.y - m1.D.y;
-        pts.push({ x: m1.D.x + dx * 0.08, y: m1.D.y + dy * 0.3 });
-        const c = { x: m1.D.x + dx * 0.46, y: m1.D.y + dy * 0.6 };
-        const L = Math.hypot(dx, dy) || 1;
-        const u = { x: dx / L, y: dy / L };
-        let v = { x: u.y, y: -u.x };
-        if (v.y > 0) v = { x: -v.x, y: -v.y };
-        const s = clamp(dy * 0.03, 4, 6), k = 3.6;
-        for (let i = 0; i <= 12; i++) {
-          const t = -Math.PI + (i / 12) * 2 * Math.PI;
-          const a = s * (t - k * Math.sin(t));
-          const b = s * k * Math.cos(t);
-          pts.push({ x: c.x + u.x * a + v.x * b, y: c.y + u.y * a + v.y * b });
+      const sweeps: Array<{ mid: Pt; side: string }> = [];
+      for (let i = 1; i < spine.length; i++) {
+        const prev = spine[i - 1];
+        const next = spine[i];
+        const dx = next.A.x - prev.D.x, dy = next.A.y - prev.D.y;
+        const qx = next.place === 'right' ? -16 : 14;
+        const q = { x: next.A.x + qx, y: next.A.y - clamp(dy * 0.22, 52, 96) };
+        if (i === 1) {
+          // a curl on the first crossing: one period of a prolate cycloid,
+          // so the line genuinely crosses itself
+          pts.push({ x: prev.D.x + dx * 0.08, y: prev.D.y + dy * 0.3 });
+          const c = { x: prev.D.x + dx * 0.46, y: prev.D.y + dy * 0.6 };
+          const L = Math.hypot(dx, dy) || 1;
+          const u = { x: dx / L, y: dy / L };
+          let v = { x: u.y, y: -u.x };
+          if (v.y > 0) v = { x: -v.x, y: -v.y };
+          const s = clamp(dy * 0.03, 4, 6), k = 3.6;
+          for (let j = 0; j <= 12; j++) {
+            const t = -Math.PI + (j / 12) * 2 * Math.PI;
+            const a = s * (t - k * Math.sin(t));
+            const b = s * k * Math.cos(t);
+            pts.push({ x: c.x + u.x * a + v.x * b, y: c.y + u.y * a + v.y * b });
+          }
+          pts.push(q);
+          nearLabel[next.id] = { near: q, prefer: { x: next.place === 'right' ? 1 : -1, y: -0.2 } };
+        } else {
+          // a long sweep across
+          pts.push({ x: prev.D.x + dx * 0.06, y: prev.D.y + dy * 0.36 });
+          const mid = { x: prev.D.x + dx * 0.6, y: prev.D.y + dy * 0.62 };
+          pts.push(mid, q);
+          sweeps.push({ mid, side: next.place });
+          nearLabel[next.id] = {
+            near: lerp(mid, q, 0.3),
+            prefer: { x: next.place === 'left' ? 0.4 : -0.4, y: 1 },
+          };
         }
-        const q = { x: m2.A.x - 16, y: m2.A.y - clamp(dy * 0.22, 52, 96) };
-        pts.push(q);
-        nearLabel.reading = { near: q, prefer: { x: 1, y: -0.2 } };
+        pts.push(next.A, { x: next.spine - 6, y: (next.A.y + next.D.y) / 2 }, next.D);
       }
-      pts.push(m2.A, { x: m2.spine - 6, y: (m2.A.y + m2.D.y) / 2 }, m2.D);
+      const lastSpine = spine[spine.length - 1];
 
-      // a long sweep back to the left
-      let sweepMid: Pt;
-      {
-        const dx = m3.A.x - m2.D.x, dy = m3.A.y - m2.D.y;
-        pts.push({ x: m2.D.x + dx * 0.06, y: m2.D.y + dy * 0.36 });
-        sweepMid = { x: m2.D.x + dx * 0.6, y: m2.D.y + dy * 0.62 };
-        pts.push(sweepMid);
-        const q = { x: m3.A.x + 14, y: m3.A.y - clamp(dy * 0.22, 52, 96) };
-        pts.push(q);
-        nearLabel.hdfc = { near: lerp(sweepMid, q, 0.3), prefer: { x: 0.4, y: 1 } };
-      }
-      pts.push(m3.A, { x: m3.spine - 6, y: (m3.A.y + m3.D.y) / 2 }, m3.D);
-
-      /* the thought: an outline around the fourth moment */
-      const R = m4.box;
+      /* the thought: an outline around its moment */
+      const R = thought.box;
       const C = { x: R.left + R.width / 2, y: R.top + R.height / 2 };
       const ax = R.width / 2 + 8, by = R.height / 2 + 6;
       // as round as the text allows: the body's corners must stay inside the outline
-      const cu = Math.max(Math.abs(m4.b.left - C.x), Math.abs(m4.b.right - C.x)) / ax;
-      const cv = Math.max(Math.abs(m4.b.top - C.y), Math.abs(m4.b.bottom - C.y)) / by;
+      const cu = Math.max(Math.abs(thought.b.left - C.x), Math.abs(thought.b.right - C.x)) / ax;
+      const cv = Math.max(Math.abs(thought.b.top - C.y), Math.abs(thought.b.bottom - C.y)) / by;
       let n = 2.8;
       while (n < 5 && cu ** n + cv ** n > 0.86) n += 0.2;
       const outlinePoint = (th: number): Pt => {
@@ -1098,7 +1136,7 @@ const { moments } = Astro.props;
       const Tb = outlinePoint(thetaT);
 
       // the line trails off toward the thought
-      pts.push(lerp(m3.D, Tb, 0.13));
+      pts.push(lerp(lastSpine.D, Tb, 0.13));
 
       const main = path(d(splineOpen(pts)));
       const mainLen = main.getTotalLength();
@@ -1109,21 +1147,25 @@ const { moments } = Astro.props;
       gradIn.setAttribute('y1', fmt(start.y));
       gradIn.setAttribute('y2', fmt(start.y + 80));
 
-      tendril(main, nearestLength(main, mainLen, sweepMid) - 26, { x: -0.4, y: -1 });
-      for (const id of ['reading', 'hdfc']) {
-        const { near, prefer } = nearLabel[id];
+      for (const s of sweeps) {
+        tendril(main, nearestLength(main, mainLen, s.mid) - 26, {
+          x: s.side === 'left' ? -0.4 : 0.4,
+          y: -1,
+        });
+      }
+      for (const [id, { near, prefer }] of Object.entries(nearLabel)) {
         labelAt[id] = beside(main, mainLen, near, prefer, 20);
       }
 
       // three small circles, growing, on the way to the thought
       const fr = [0.34, 0.58, 0.8], rr = [2.4, 3.8, 5.8];
-      const dir = { x: Tb.x - m3.D.x, y: Tb.y - m3.D.y };
+      const dir = { x: Tb.x - lastSpine.D.x, y: Tb.y - lastSpine.D.y };
       const dl = Math.hypot(dir.x, dir.y) || 1;
       const nrm = { x: -dir.y / dl, y: dir.x / dl };
       let secondDot: Pt = Tb;
       fr.forEach((f, i) => {
         const off = (i % 2 ? -1 : 1) * 5;
-        const c = lerp(m3.D, Tb, f);
+        const c = lerp(lastSpine.D, Tb, f);
         c.x += nrm.x * off;
         c.y += nrm.y * off;
         if (i === 1) secondDot = c;
@@ -1144,17 +1186,22 @@ const { moments } = Astro.props;
       addStroke(cw, ringAt(cw));
       addStroke(ccw, ringAt(ccw));
 
-      /* out of the thought, down to the thing that got built */
+      /* out of the thought, down through the things that got built */
       const thetaE = Math.atan2(R.bottom + 8 - C.y, R.left + R.width * 0.3 - C.x);
       const E = outlinePoint(thetaE);
       const out: Pt[] = [E, { x: E.x - 18, y: E.y + 26 }];
-      const dx = m5.A.x - E.x, dy = m5.A.y - E.y;
-      const mid = { x: E.x + dx * 0.46, y: E.y + dy * 0.44 };
-      out.push(mid);
-      const q5 = { x: m5.A.x + 14, y: m5.A.y - dy * 0.18 };
-      out.push(q5, m5.A, { x: m5.spine - 5, y: (m5.A.y + m5.D.y) / 2 }, m5.D);
-      const tailEnd = { x: m5.D.x + 5, y: m5.D.y + 104 };
-      out.push({ x: m5.D.x - 7, y: m5.D.y + 56 }, tailEnd);
+      const closeMids: Record<string, Pt> = {};
+      let from: Pt = E;
+      for (const c of closes) {
+        const dx = c.A.x - from.x, dy = c.A.y - from.y;
+        const mid = { x: from.x + dx * 0.46, y: from.y + dy * 0.44 };
+        out.push(mid, { x: c.A.x + 14, y: c.A.y - dy * 0.18 });
+        out.push(c.A, { x: c.spine - 5, y: (c.A.y + c.D.y) / 2 }, c.D);
+        closeMids[c.id] = mid;
+        from = c.D;
+      }
+      const tailEnd = { x: from.x + 5, y: from.y + 104 };
+      out.push({ x: from.x - 7, y: from.y + 56 }, tailEnd);
       const exit = path(d(splineOpen(out)));
       const exitLen = exit.getTotalLength();
       addStroke(exit, tableFor(exit, exitLen));
@@ -1163,9 +1210,11 @@ const { moments } = Astro.props;
       gradOut.setAttribute('x2', fmt(tailEnd.x));
       gradOut.setAttribute('y1', fmt(tailEnd.y - 96));
       gradOut.setAttribute('y2', fmt(tailEnd.y));
-      labelAt.uaa = beside(exit, exitLen, mid, { x: 0.6, y: 1 }, 20);
+      for (const c of closes) {
+        labelAt[c.id] = beside(exit, exitLen, closeMids[c.id], { x: 0.6, y: 1 }, 20);
+      }
 
-      tendril(exit, nearestLength(exit, exitLen, mid) - 48, { x: 0.6, y: -1 });
+      tendril(exit, nearestLength(exit, exitLen, closeMids[closes[0].id]) - 48, { x: 0.6, y: -1 });
 
       /* labels sit just off the line; moments light when the line arrives */
       for (const el of labelEls) {

@@ -6,6 +6,11 @@
  * "so" or "then" themselves. Evidence is what appears when someone hovers or
  * taps the marked term in a detail. Nothing here is required reading — the
  * page has to make sense with every piece of evidence left undiscovered.
+ *
+ * Structure the component understands: any number of alternating left/right
+ * spine moments, exactly one `thought`, then one or more `close` moments.
+ * Every fact here is real (the same record as /conventional). The jokes are
+ * jokes; the dates, figures and jobs are not.
  */
 
 export type DetailPart = string | { term: string };
@@ -14,8 +19,9 @@ export type Evidence =
   /** Contradictory headlines, timestamped like a wire feed. */
   | { kind: 'clippings'; note: string; items: { time: string; text: string }[] }
   /**
-   * A cascade of questions, each one caused by the last. `kind` exists so real
-   * titles can be filed here later without changing the component.
+   * A cascade of steps or questions, each one caused by the last. `kind`
+   * exists so real titles can be filed here later without changing the
+   * component.
    */
   | { kind: 'cascade'; note: string; items: { text: string; kind?: 'question' | 'book' | 'article' }[] }
   /** Figures with captions, like a small ledger. */
@@ -39,11 +45,11 @@ export const moments: Moment[] = [
   {
     id: 'markets',
     place: 'left',
-    heading: 'I got curious about markets.',
+    heading: 'It started with markets.',
     detail: [
-      'This would have been simpler if anyone agreed on how they worked. Every move came with an ',
-      { term: 'explanation' },
-      ', usually several, none of them compatible, all of them confident.',
+      'High-school economics in Mumbai, and a growing suspicion about the financial pages: the same index move earned three ',
+      { term: 'explanations' },
+      ' by evening, all confident, none compatible. I started keeping score.',
     ],
     evidence: {
       kind: 'clippings',
@@ -60,42 +66,64 @@ export const moments: Moment[] = [
     id: 'reading',
     place: 'right',
     connector: 'so',
-    heading: 'I started reading, which did not help.',
+    heading: 'The reading escalated.',
     detail: [
-      'Every answer arrived with two new ',
-      { term: 'questions' },
-      ' attached. This is either a design flaw or the whole point. I decided it was the point.',
+      'Newspapers first, then the documents the newspapers were paraphrasing: filings, earnings calls, footnotes. Somewhere in there the ',
+      { term: 'question' },
+      ' changed — from what a company is worth to why the people pricing it behave the way they do.',
     ],
     evidence: {
       kind: 'cascade',
-      note: 'a representative evening',
+      note: 'the escalation, roughly',
       items: [
-        { text: 'why did it move?' },
-        { text: 'who decided that?' },
-        { text: 'what is a basis point, really?' },
-        { text: 'why does anyone trust a forecast?' },
-        { text: 'why do I?' },
+        { text: 'why did the stock move?' },
+        { text: 'what did the company actually report?' },
+        { text: 'what did management say on the call?' },
+        { text: 'why did anyone believe them?' },
+        { text: 'would I have?' },
+      ],
+    },
+  },
+  {
+    id: 'research',
+    place: 'left',
+    connector: 'at some point',
+    heading: 'I stopped reading and tested something.',
+    detail: [
+      'Anchoring — the theory that investors cling to the first price they see. Six months of price data, linear ',
+      { term: 'regressions' },
+      ' and model-checking, then a write-up. It found 500-odd readers, several of them not related to me.',
+    ],
+    evidence: {
+      kind: 'cascade',
+      note: 'the method, roughly',
+      items: [
+        { text: 'pick a claim everyone repeats: anchoring' },
+        { text: 'collect the price data' },
+        { text: 'run the regressions' },
+        { text: 'check significance, magnitude, fit' },
+        { text: 'publish, brace' },
       ],
     },
   },
   {
     id: 'hdfc',
-    place: 'left',
+    place: 'right',
     connector: 'eventually',
-    heading: 'I went to watch it done for real.',
+    heading: 'I went to see it done professionally.',
     detail: [
-      'An internship at ',
+      'A summer at ',
       { term: 'HDFC Asset Management' },
-      ', where I built a scoring framework to compare asset managers against one another, worked through prospecting data on family offices, and saw what research looks like when it is someone’s job rather than someone’s evening.',
+      ' in Mumbai. I screened MCA filings to build a database of fifty single-family offices the desk could actually call, and graded asset managers on how they treat investors — by phoning them and turning up in person. Professional research, it turns out, is the same tabs with better stationery.',
     ],
     evidence: {
       kind: 'ledger',
-      note: 'the work, itemised',
+      note: 'the summer, itemised',
       items: [
-        { figure: '5+', text: 'asset management companies, compared' },
-        { figure: '12', text: 'metrics in one scoring framework' },
-        { figure: '20+', text: 'family office and HNI contacts in the prospecting data' },
-        { figure: '1', text: 'research process, observed at close range' },
+        { figure: '50', text: 'single-family offices in the outreach database, screened via MCA filings' },
+        { figure: '12', text: 'client-servicing metrics, scored through calls and site visits' },
+        { figure: '5+', text: 'asset managers compared on them' },
+        { figure: '1', text: 'NISM V-A certification, acquired along the way' },
       ],
     },
   },
@@ -105,9 +133,9 @@ export const moments: Moment[] = [
     connector: 'where',
     heading: 'The research was interesting. The seventeen tabs were less so.',
     detail: [
-      'Everything I needed existed. It was just in eleven places, none of which knew about the others. At some point I became less interested in opening another ',
+      'Everything I needed existed. It was just spread over a filing here, a screener there, a transcript, a spreadsheet, and whichever ',
       { term: 'tab' },
-      ' and more interested in why I had to.',
+      ' the notes were hiding in.',
     ],
     evidence: {
       kind: 'tabs',
@@ -130,7 +158,7 @@ export const moments: Moment[] = [
     connector: 'it turned out',
     heading: 'I was not the only one with a tab problem.',
     detail: [
-      'A friend had hit the same wall from a different desk, so we started building the thing we wanted to use ourselves: one place where investment research actually comes together. It is going well, at some cost to our evenings.',
+      'A friend had hit the same wall, so since June we’ve been building the fix: filings, screeners, transcripts, models and notes in one workspace. My half is the engineering — valuation models, quantitative screens, portfolio analytics — and the apologies when the build breaks.',
     ],
     product: {
       name: 'Universal Asset Analyzer',
@@ -139,15 +167,13 @@ export const moments: Moment[] = [
       peek: ['the problem', 'the product', 'the deck'],
     },
   },
-];
-
-export interface FutureThread {
-  from: string;
-  to: string;
-}
-
-export const futureThreads: FutureThread[] = [
-  { from: 'Food waste', to: 'Food For Thought' },
-  { from: 'Mathematics', to: 'models, and better questions' },
-  { from: 'Teaching', to: 'helping people understand difficult things' },
+  {
+    id: 'teaching',
+    place: 'close',
+    connector: 'meanwhile',
+    heading: 'I teach the math I lean on.',
+    detail: [
+      'TA for Calculus III in the Columbia math department — in the room while students work through problem sets, on email for everything after. I have learned that “any questions?” and the silence that follows are statistically independent events.',
+    ],
+  },
 ];

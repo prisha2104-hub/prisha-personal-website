@@ -1,0 +1,820 @@
+---
+import Mark from './Mark.astro';
+import type { DocSection, SkillRow, Slot } from '../data/conventional';
+
+interface Props {
+  identity: { name: string; descriptor: string; line: string; asOf: string };
+  contacts: Slot[];
+  sections: DocSection[];
+  skills: SkillRow[];
+  footnote: string;
+}
+
+const { identity, contacts, sections, skills, footnote } = Astro.props;
+
+const navItems = [...sections.map((s) => ({ id: s.id, title: s.title })), { id: 'skills', title: 'Skills' }];
+---
+
+<div class="dossier" data-dossier>
+  <!-- narrow screens: a slim bar that knows where you are -->
+  <nav class="strip" data-strip aria-label="On this page">
+    {
+      navItems.map((n) => (
+        <a href={`#${n.id}`} data-strip-link={n.id}>
+          {n.title}
+        </a>
+      ))
+    }
+  </nav>
+
+  <div class="spread">
+    <!-- the cover: stays put while the record scrolls past -->
+    <aside class="cover">
+      <p class="label">07 / 08 — The conventional version</p>
+      <h1 class="name">{identity.name}</h1>
+      <p class="descriptor">{identity.descriptor}</p>
+      <p class="cover-line">
+        {identity.line} Accurate, just not the whole story — <a href="/">the rest of the site</a> holds that.
+      </p>
+
+      <nav class="index" aria-label="Sections" data-index>
+        <span class="cursor" data-cursor aria-hidden="true"><Mark size={11} /></span>
+        {
+          navItems.map((n) => (
+            <a class="index-link" href={`#${n.id}`} data-index-link={n.id}>
+              {n.title}
+            </a>
+          ))
+        }
+      </nav>
+
+      <div class="cover-foot">
+        <ul class="contacts">
+          {
+            contacts.map((c) => (
+              <li class:list={[c.tk && 'tk']}>
+                {c.href ? (
+                  <a href={c.href} rel={c.href.startsWith('mailto:') ? null : 'me noopener'}>
+                    {c.text}
+                  </a>
+                ) : (
+                  c.text
+                )}
+              </li>
+            ))
+          }
+        </ul>
+        <div class="foot-row">
+          <span class="label">as of {identity.asOf}</span>
+          <button class="draw-link print-btn" type="button" data-print>Print</button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- the record -->
+    <div class="doc">
+      {
+        sections.map((s) => (
+          <section class="sect" id={s.id} data-sect={s.id} data-reveal>
+            <header class="sect-head">
+              <h2>{s.title}</h2>
+              <span class="rule" aria-hidden="true" />
+            </header>
+            <ol class="entries" role="list">
+              {s.entries.map((e, i) => (
+                <li class="entry" role="listitem" style={`--i: ${i}`}>
+                  <div class="line1">
+                    <span class="what">{e.what}</span>
+                    {e.org && (
+                      <span class:list={['org', e.org.tk && 'tk']}>{e.org.text}</span>
+                    )}
+                    {e.place && <span class="place">· {e.place}</span>}
+                    <span class="leader" aria-hidden="true" />
+                    {e.when && (
+                      <span class:list={['when', e.when.tk && 'tk']}>{e.when.text}</span>
+                    )}
+                  </div>
+                  {e.lead && <p class="lead">{e.lead}</p>}
+                  {e.details?.map((dt) => (
+                    <p class:list={['detail', dt.tk && 'tk']}>{dt.text}</p>
+                  ))}
+                  {e.breakdown && (
+                    <ul class="breakdown" role="list">
+                      {e.breakdown.map((b) => (
+                        <li role="listitem">
+                          <span class="label breakdown-label">{b.label}</span>
+                          <span class="breakdown-text">{b.text}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                  {e.figures && (
+                    <ul class="figures" role="list">
+                      {e.figures.map((f) => (
+                        <li role="listitem">
+                          <span class="fig">{f.figure}</span>
+                          <span class="fig-text">{f.text}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                  {e.link && (
+                    <a class="draw-link entry-link" href={e.link.href}>
+                      {e.link.label} <span class="arrow" aria-hidden="true">→</span>
+                    </a>
+                  )}
+                </li>
+              ))}
+            </ol>
+          </section>
+        ))
+      }
+
+      <section class="sect" id="skills" data-sect="skills" data-reveal>
+        <header class="sect-head">
+          <h2>Skills</h2>
+          <span class="rule" aria-hidden="true"></span>
+        </header>
+        <ul class="skill-rows" role="list">
+          {
+            skills.map((row, i) => (
+              <li class="skill-row entry" role="listitem" style={`--i: ${i}`}>
+                <span class="label skill-label">{row.label}</span>
+                <span class="skill-items">{row.items}</span>
+              </li>
+            ))
+          }
+        </ul>
+        <p class="footnote">{footnote}</p>
+      </section>
+    </div>
+  </div>
+</div>
+
+<style>
+  /* ------------------------------------------------------------------
+     The dossier: a cover that stays, a record that moves.
+     Wider than the rest of the site on purpose.
+  ------------------------------------------------------------------- */
+  .dossier {
+    width: 100%;
+    max-width: min(92rem, 100%);
+    margin-inline: auto;
+    padding-inline: var(--pad-x);
+  }
+
+  .spread {
+    display: grid;
+    grid-template-columns: minmax(18rem, 23rem) minmax(0, 1fr);
+    gap: clamp(3rem, 6vw, 7rem);
+    align-items: start;
+    padding-top: clamp(3rem, 8vh, 5.5rem);
+  }
+
+  /* ------------------------------------------------------------------
+     Cover
+  ------------------------------------------------------------------- */
+  .cover {
+    position: sticky;
+    top: clamp(1.25rem, 4vh, 2.5rem);
+  }
+
+  .name {
+    margin-top: 1.4rem;
+    font-size: clamp(2.3rem, 1.6rem + 2vw, 3.1rem);
+    line-height: 1.02;
+  }
+
+  .descriptor {
+    margin-top: 0.9rem;
+    font-family: var(--font-mono);
+    font-size: var(--text-label);
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--ink-secondary);
+  }
+
+  .cover-line {
+    margin-top: 1.3rem;
+    font-size: var(--text-small);
+    font-style: italic;
+    line-height: 1.55;
+    color: var(--ink-secondary);
+    max-width: 21rem;
+    text-wrap: pretty;
+  }
+
+  .cover-line a {
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 0.22em;
+    text-decoration-color: var(--accent-soft);
+    transition: color var(--dur-1) var(--ease-out);
+  }
+
+  .cover-line a:hover,
+  .cover-line a:focus-visible {
+    color: var(--accent);
+  }
+
+  /* the index: the asterisk is the cursor in the file */
+  .index {
+    position: relative;
+    margin-top: clamp(1.8rem, 4vh, 2.8rem);
+    padding-left: 1.5rem;
+    border-left: 1px solid var(--line-faint);
+    display: flex;
+    flex-direction: column;
+  }
+
+  .cursor {
+    position: absolute;
+    left: -6px;
+    top: 0;
+    display: inline-flex;
+    color: var(--accent);
+    background: var(--bg);
+    padding-block: 3px;
+    opacity: 0;
+    transition: top var(--dur-3) var(--ease-out), opacity var(--dur-2) var(--ease-out);
+  }
+
+  .dossier.is-tracking .cursor {
+    opacity: 1;
+  }
+
+  .index-link {
+    font-family: var(--font-mono);
+    font-size: var(--text-label);
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    text-decoration: none;
+    color: var(--ink-faint);
+    padding-block: 0.48rem;
+    transition: color var(--dur-1) var(--ease-out), transform var(--dur-2) var(--ease-out);
+  }
+
+  .index-link:hover,
+  .index-link:focus-visible {
+    color: var(--ink);
+  }
+
+  /* seen sections keep a quiet record; the active one is present tense */
+  .index-link.is-seen {
+    color: var(--ink-secondary);
+  }
+
+  .index-link.is-active {
+    color: var(--ink);
+    transform: translateX(4px);
+  }
+
+  .cover-foot {
+    margin-top: clamp(1.8rem, 4vh, 2.8rem);
+  }
+
+  .contacts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem 1.2rem;
+  }
+
+  .contacts li {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-secondary);
+  }
+
+  .contacts a {
+    color: inherit;
+    text-decoration: none;
+    padding-bottom: 2px;
+    background-image: linear-gradient(var(--accent), var(--accent));
+    background-size: 0% 1px;
+    background-repeat: no-repeat;
+    background-position: 0 100%;
+    transition: color var(--dur-1) var(--ease-out), background-size var(--dur-2) var(--ease-out);
+  }
+
+  .contacts a:hover,
+  .contacts a:focus-visible {
+    color: var(--ink);
+    background-size: 100% 1px;
+  }
+
+  .foot-row {
+    margin-top: 1.4rem;
+    display: flex;
+    align-items: baseline;
+    gap: 1.4rem;
+  }
+
+  .print-btn {
+    color: var(--ink-secondary);
+  }
+
+  /* ------------------------------------------------------------------
+     The record: ruled sections, ledger entries
+  ------------------------------------------------------------------- */
+  .sect {
+    scroll-margin-top: 5.5rem;
+  }
+
+  .sect + .sect {
+    margin-top: clamp(3.6rem, 8vh, 5.5rem);
+  }
+
+  .sect-head {
+    display: flex;
+    align-items: baseline;
+    gap: 1.4rem;
+  }
+
+  .sect-head h2 {
+    font-size: clamp(1.5rem, 1.3rem + 0.9vw, 1.95rem);
+    font-weight: 440;
+    letter-spacing: -0.012em;
+  }
+
+  .rule {
+    flex: 1;
+    height: 1px;
+    background: var(--line);
+    transform: scaleX(0);
+    transform-origin: left center;
+    transition: transform var(--dur-4) var(--ease-out) 140ms;
+  }
+
+  .sect.is-revealed .rule {
+    transform: scaleX(1);
+  }
+
+  .entries {
+    margin-top: 1.9rem;
+  }
+
+  .entry + .entry {
+    margin-top: 2.4rem;
+  }
+
+  .line1 {
+    display: flex;
+    align-items: baseline;
+    gap: 0.7rem;
+    flex-wrap: wrap;
+  }
+
+  .what {
+    font-family: var(--font-display);
+    font-size: 1.22rem;
+    font-weight: 470;
+    letter-spacing: -0.005em;
+  }
+
+  .org {
+    color: var(--ink-secondary);
+    font-size: 1.02rem;
+  }
+
+  .place {
+    color: var(--ink-secondary);
+    font-size: 1.02rem;
+  }
+
+  .leader {
+    flex: 1;
+    min-width: 2.5rem;
+    border-bottom: 1px dotted var(--line);
+    transform: translateY(-0.3em);
+    transition: border-color var(--dur-1) var(--ease-out);
+  }
+
+  .entry:hover .leader {
+    border-color: var(--accent-soft);
+  }
+
+  .when {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+  }
+
+  /* a lede: one line of framing above the detail, for the longer entries */
+  .lead {
+    margin-top: 0.7rem;
+    font-size: 1.06rem;
+    line-height: 1.5;
+    max-width: 38rem;
+    text-wrap: pretty;
+    color: var(--ink);
+  }
+
+  .detail {
+    margin-top: 0.55rem;
+    color: var(--ink-secondary);
+    font-size: 0.98rem;
+    line-height: 1.55;
+    max-width: 40rem;
+    text-wrap: pretty;
+  }
+
+  .lead + .detail,
+  .detail + .detail {
+    margin-top: 0.75rem;
+  }
+
+  /* the parts of a longer piece of work: ruled label/value rows */
+  .breakdown {
+    margin-top: 1.25rem;
+    max-width: 34rem;
+    border-top: 1px solid var(--line-faint);
+  }
+
+  .breakdown li {
+    display: grid;
+    grid-template-columns: 7.5rem minmax(0, 1fr);
+    gap: 1.4rem;
+    align-items: baseline;
+    padding-block: 0.6rem;
+    border-bottom: 1px solid var(--line-faint);
+  }
+
+  .breakdown-label {
+    color: var(--ink-faint);
+  }
+
+  .breakdown-text {
+    font-size: 0.98rem;
+    color: var(--ink-secondary);
+    line-height: 1.5;
+  }
+
+  .figures {
+    margin-top: 1.15rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem 2.8rem;
+  }
+
+  .figures .fig {
+    display: block;
+    font-family: var(--font-display);
+    font-size: 1.55rem;
+    font-weight: 400;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+  }
+
+  .figures .fig-text {
+    display: block;
+    margin-top: 0.25rem;
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.05em;
+    color: var(--ink-faint);
+    max-width: 11rem;
+    line-height: 1.45;
+  }
+
+  .entry-link {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 0.45em;
+    margin-top: 0.95rem;
+    color: var(--ink-secondary);
+  }
+
+  .entry-link .arrow {
+    font-size: 0.85rem;
+    color: var(--ink-faint);
+    transition: transform var(--dur-2) var(--ease-out), color var(--dur-1) var(--ease-out);
+  }
+
+  .entry-link:hover .arrow,
+  .entry-link:focus-visible .arrow {
+    transform: translateX(4px);
+    color: var(--accent);
+  }
+
+  /* skills as ruled ledger lines, not pills */
+  .skill-rows {
+    margin-top: 1.9rem;
+  }
+
+  .skill-row {
+    display: grid;
+    grid-template-columns: 7.5rem minmax(0, 1fr);
+    gap: 1.4rem;
+    align-items: baseline;
+    padding-block: 0.85rem;
+    border-top: 1px solid var(--line-faint);
+  }
+
+  .skill-row + .skill-row {
+    margin-top: 0;
+  }
+
+  .skill-row:last-of-type {
+    border-bottom: 1px solid var(--line-faint);
+  }
+
+  .skill-items {
+    font-size: 1.02rem;
+    color: var(--ink);
+    line-height: 1.6;
+  }
+
+  .footnote {
+    margin-top: 2.4rem;
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    letter-spacing: 0.04em;
+    color: var(--ink-faint);
+  }
+
+  /* placeholders: visibly unfinished, never mistaken for facts */
+  .tk {
+    font-family: var(--font-mono);
+    font-style: normal;
+    font-size: 0.78em;
+    letter-spacing: 0.06em;
+    color: var(--ink-faint);
+  }
+
+  .tk::before {
+    content: '[ ';
+  }
+
+  .tk::after {
+    content: ' ]';
+  }
+
+  /* ------------------------------------------------------------------
+     Entries settle into place as each section reveals
+  ------------------------------------------------------------------- */
+  :global(.js) .sect[data-reveal] .entry {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  :global(.js) .sect[data-reveal].is-revealed .entry {
+    opacity: 1;
+    transform: none;
+    transition:
+      opacity var(--dur-3) var(--ease-out) calc(160ms + var(--i) * 80ms),
+      transform var(--dur-3) var(--ease-out) calc(160ms + var(--i) * 80ms);
+  }
+
+  /* ------------------------------------------------------------------
+     The strip: narrow-screen orientation
+  ------------------------------------------------------------------- */
+  .strip {
+    display: none;
+  }
+
+  @media (max-width: 880px) {
+    .spread {
+      grid-template-columns: 1fr;
+      gap: 0;
+      padding-top: clamp(2.2rem, 6vh, 3.5rem);
+    }
+
+    .cover {
+      position: static;
+    }
+
+    .index {
+      display: none;
+    }
+
+    .cover-foot {
+      margin-top: 1.6rem;
+    }
+
+    .doc {
+      margin-top: clamp(2.8rem, 7vh, 4rem);
+    }
+
+    .strip {
+      display: flex;
+      gap: 1.6rem;
+      position: sticky;
+      top: 0;
+      z-index: 30;
+      margin-inline: calc(-1 * var(--pad-x));
+      padding: 0.8rem var(--pad-x);
+      background: var(--bg);
+      border-bottom: 1px solid var(--line-faint);
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+
+    .strip::-webkit-scrollbar {
+      display: none;
+    }
+
+    .strip a {
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      text-decoration: none;
+      color: var(--ink-faint);
+      white-space: nowrap;
+      padding-bottom: 2px;
+      background-image: linear-gradient(var(--accent), var(--accent));
+      background-size: 0% 1px;
+      background-repeat: no-repeat;
+      background-position: 0 100%;
+      transition: color var(--dur-1) var(--ease-out), background-size var(--dur-2) var(--ease-out);
+    }
+
+    .strip a.is-active {
+      color: var(--ink);
+      background-size: 100% 1px;
+    }
+
+    .sect {
+      scroll-margin-top: 4.2rem;
+    }
+
+    .line1 .leader {
+      display: none;
+    }
+
+    .line1 .when {
+      flex-basis: 100%;
+      order: -1;
+    }
+
+    .figures {
+      gap: 0.9rem 1.5rem;
+    }
+
+    .figures .fig {
+      font-size: 1.35rem;
+    }
+
+    .figures .fig-text {
+      max-width: 8.5rem;
+    }
+
+    .skill-row,
+    .breakdown li {
+      grid-template-columns: 1fr;
+      gap: 0.3rem;
+    }
+  }
+
+  /* reduced motion: everything already settled */
+  @media (prefers-reduced-motion: reduce) {
+    :global(.js) .sect[data-reveal] .entry {
+      opacity: 1;
+      transform: none;
+    }
+
+    .rule {
+      transform: scaleX(1);
+    }
+  }
+
+  /* ------------------------------------------------------------------
+     Print: the PDF is a byproduct of the page, not the other way round
+  ------------------------------------------------------------------- */
+  @media print {
+    :global(.site-header),
+    :global(.site-footer),
+    :global(#site-menu),
+    :global(.skip),
+    .strip,
+    .index,
+    .print-btn {
+      display: none !important;
+    }
+
+    .dossier {
+      max-width: none;
+      padding: 0;
+    }
+
+    .spread {
+      display: block;
+      padding-top: 0;
+    }
+
+    .cover {
+      position: static;
+      margin-bottom: 2rem;
+    }
+
+    .doc {
+      margin-top: 1.5rem;
+    }
+
+    .sect + .sect {
+      margin-top: 2rem;
+    }
+
+    .sect {
+      break-inside: avoid;
+    }
+
+    .rule {
+      transform: none;
+    }
+
+    :global(.js) .sect[data-reveal] .entry {
+      opacity: 1 !important;
+      transform: none !important;
+    }
+  }
+</style>
+
+<script>
+  const root = document.querySelector<HTMLElement>('[data-dossier]');
+  if (root) init(root);
+
+  function init(root: HTMLElement) {
+    const cursor = root.querySelector<HTMLElement>('[data-cursor]')!;
+    const indexLinks = new Map(
+      Array.from(root.querySelectorAll<HTMLAnchorElement>('[data-index-link]')).map((a) => [
+        a.dataset.indexLink!,
+        a,
+      ])
+    );
+    const stripLinks = new Map(
+      Array.from(root.querySelectorAll<HTMLAnchorElement>('[data-strip-link]')).map((a) => [
+        a.dataset.stripLink!,
+        a,
+      ])
+    );
+    const strip = root.querySelector<HTMLElement>('[data-strip]')!;
+    const sects = Array.from(root.querySelectorAll<HTMLElement>('[data-sect]'));
+    const printBtn = root.querySelector<HTMLButtonElement>('[data-print]');
+    const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    printBtn?.addEventListener('click', () => window.print());
+
+    let active = '';
+
+    function placeCursor() {
+      const link = indexLinks.get(active);
+      if (!link) return;
+      cursor.style.top = `${link.offsetTop + link.offsetHeight / 2 - cursor.offsetHeight / 2}px`;
+    }
+
+    function setActive(id: string) {
+      if (id === active) return;
+      active = id;
+      for (const [key, a] of indexLinks) {
+        a.classList.toggle('is-active', key === id);
+        if (key === id) a.classList.add('is-seen');
+      }
+      for (const [key, a] of stripLinks) {
+        a.classList.toggle('is-active', key === id);
+      }
+      root.classList.add('is-tracking');
+      placeCursor();
+      const stripLink = stripLinks.get(id);
+      if (stripLink && strip.scrollWidth > strip.clientWidth) {
+        strip.scrollTo({
+          left: stripLink.offsetLeft - strip.clientWidth / 2 + stripLink.offsetWidth / 2,
+          behavior: reduced ? 'auto' : 'smooth',
+        });
+      }
+    }
+
+    // the active section is the last one whose top has crossed the
+    // reading line (42% of the viewport); recomputed, never raced
+    function recompute() {
+      const line = innerHeight * 0.42;
+      let current = sects[0]?.dataset.sect ?? '';
+      for (const s of sects) {
+        if (s.getBoundingClientRect().top <= line) current = s.dataset.sect!;
+      }
+      if (current) setActive(current);
+    }
+
+    addEventListener('scroll', recompute, { passive: true });
+    recompute();
+
+    // index clicks scroll gently; reduced motion jumps
+    for (const [id, a] of indexLinks) {
+      a.addEventListener('click', (e) => {
+        const target = document.getElementById(id);
+        if (!target) return;
+        e.preventDefault();
+        target.scrollIntoView({ behavior: reduced ? 'auto' : 'smooth', block: 'start' });
+        history.replaceState(null, '', `#${id}`);
+      });
+    }
+
+    addEventListener('resize', placeCursor);
+    document.fonts?.ready.then(placeCursor);
+  }
+</script>

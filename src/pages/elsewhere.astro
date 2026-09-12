@@ -2,6 +2,8 @@
 import Base from '../layouts/Base.astro';
 import SectionIntro from '../components/SectionIntro.astro';
 import Scaffold from '../components/Scaffold.astro';
+import Bookshelf from '../components/Bookshelf.astro';
+import { shelves } from '../data/books';
 ---
 
 <Base title="Elsewhere" description="Books, rabbit holes, and other off-résumé material.">
@@ -9,9 +11,11 @@ import Scaffold from '../components/Scaffold.astro';
     <SectionIntro num="07" title="Elsewhere">
       <p>The parts of a person that don’t survive conversion to PDF.</p>
     </SectionIntro>
+
+    <Bookshelf shelves={shelves} />
+
     <Scaffold
       items={[
-        { name: 'Books', hint: 'read, abandoned, re-read' },
         { name: 'Articles', hint: 'the ones worth sending to people' },
         { name: 'Rabbit holes', hint: 'entered knowingly' },
         { name: 'Puzzles', hint: 'and other productive procrastination' },

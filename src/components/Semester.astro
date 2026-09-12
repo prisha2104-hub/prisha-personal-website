@@ -1,0 +1,118 @@
+---
+import type { Course } from '../data/now';
+
+interface Props {
+  term: string;
+  note: string;
+  footnote: string;
+  courses: Course[];
+}
+
+const { term, note, footnote, courses } = Astro.props;
+const hasTentative = courses.some((c) => c.tentative);
+---
+
+<section class="semester">
+  <header class="sem-head">
+    <p class="label">This semester</p>
+    <p class="label term">{term} · {note}</p>
+  </header>
+
+  <ul class="board">
+    {
+      courses.map((c) => (
+        <li>
+          <p class="label dept">{c.dept}</p>
+          <p class="c-title">
+            {c.title}
+            {c.tentative && (
+              <>
+                <sup class="dag" aria-hidden="true">†</sup>
+                <span class="vh">(tentative)</span>
+              </>
+            )}
+          </p>
+          {c.note && <p class="c-note">{c.note}</p>}
+        </li>
+      ))
+    }
+  </ul>
+
+  {hasTentative && <p class="footnote">{footnote}</p>}
+</section>
+
+<style>
+  .semester {
+    margin-top: clamp(3.5rem, 9vh, 5.5rem);
+    max-width: 56rem;
+  }
+
+  .vh {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+
+  .sem-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.5rem 1.5rem;
+    flex-wrap: wrap;
+  }
+
+  .board {
+    margin-top: 2.1rem;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2.4rem clamp(2.5rem, 6vw, 4.5rem);
+  }
+
+  .dept {
+    font-size: 0.65rem;
+  }
+
+  .c-title {
+    margin-top: 0.3rem;
+    font-family: var(--font-display);
+    font-size: 1.17rem;
+    font-weight: 460;
+    letter-spacing: -0.005em;
+    line-height: 1.25;
+  }
+
+  .dag {
+    color: var(--accent);
+    font-family: var(--font-display);
+    font-size: 0.72em;
+    line-height: 0;
+    margin-left: 0.09em;
+  }
+
+  .c-note {
+    margin-top: 0.35rem;
+    color: var(--ink-secondary);
+    font-size: var(--text-small);
+    line-height: 1.5;
+    max-width: 24rem;
+    text-wrap: pretty;
+  }
+
+  .footnote {
+    margin-top: 2.4rem;
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    letter-spacing: 0.04em;
+    color: var(--ink-faint);
+  }
+
+  @media (max-width: 720px) {
+    .board {
+      grid-template-columns: 1fr;
+      gap: 1.7rem;
+    }
+  }
+</style>

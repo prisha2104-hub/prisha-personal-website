@@ -9,12 +9,17 @@ import Scaffold from '../components/Scaffold.astro';
 >
   <div class="wrap">
     <header class="intro">
-      <p class="label">05 / 09 — <a class="crumb" href="/building">What I build</a></p>
+      <p class="label">05 / 08 — <a class="crumb" href="/building">What I build</a></p>
       <h1>Universal Asset Analyzer</h1>
       <div class="lede prose">
         <p>
-          Investment research, in one place. Started by two people who kept needing the same
-          things from seventeen different tabs, and eventually took it personally.
+          One workspace for the research that otherwise lives in seventeen tabs: filings,
+          screeners, transcripts, models, news, notes, the portfolio.
+        </p>
+        <p>
+          Two of us have been building it since June 2026. My half is the engineering — DCF and
+          comparable-company valuation, quantitative screening, portfolio analytics, and the
+          AI-assisted research layer.
         </p>
       </div>
     </header>
@@ -63,6 +68,10 @@ import Scaffold from '../components/Scaffold.astro';
     font-size: var(--text-lede);
     line-height: 1.5;
     color: var(--ink-secondary);
+  }
+
+  .lede p + p {
+    margin-top: 1em;
   }
 
   .back {

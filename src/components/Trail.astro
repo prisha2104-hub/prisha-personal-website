@@ -1,0 +1,494 @@
+---
+import Mark from './Mark.astro';
+import type { TrailCourse } from '../data/trail';
+
+interface Props {
+  courses: TrailCourse[];
+  ending: { text: string; link: { label: string; href: string } };
+}
+
+const { courses, ending } = Astro.props;
+
+/* Courses alternate sides with a slight stagger. Column tracks:
+   1 is a narrow rail; content lives on 2–13. */
+const placed = courses.map((c, i) => {
+  const side = i % 2 === 0 ? 'left' : 'right';
+  const stagger = Math.floor(i / 2) % 2;
+  const col = side === 'left' ? `${2 + stagger} / span 6` : `${7 + stagger} / span 6`;
+  return { ...c, side, col };
+});
+---
+
+<section class="trail" data-trail>
+  <svg class="map" data-map aria-hidden="true">
+    <defs>
+      <clipPath id="trail-clip">
+        <rect data-clip x="0" y="0" width="0" height="0"></rect>
+      </clipPath>
+    </defs>
+    <g data-terrain></g>
+    <g data-walked clip-path="url(#trail-clip)"></g>
+  </svg>
+
+  <ol class="courses" role="list">
+    {
+      placed.map((c) => (
+        <li
+          id={c.id}
+          role="listitem"
+          class="course"
+          data-course
+          data-side={c.side}
+          style={`--gc: ${c.col}`}
+        >
+          <p class="term">
+            <span class="marker" data-marker><Mark size={10} /></span>
+            {c.term && <span>{c.term}</span>}
+          </p>
+          <h3 class="course-title">{c.title}</h3>
+          {c.note && <p class="note">{c.note}</p>}
+        </li>
+      ))
+    }
+  </ol>
+
+  <div class="ending" data-ending>
+    <p class="ending-text">{ending.text}</p>
+    <a class="draw-link" href={ending.link.href}>{ending.link.label}</a>
+  </div>
+
+  <span class="walker" data-walker aria-hidden="true"><Mark size={15} /></span>
+</section>
+
+<style>
+  /* ------------------------------------------------------------------
+     One line winds down the page. It passes the courses; it doesn't
+     claim to connect them.
+  ------------------------------------------------------------------- */
+  .trail {
+    --trail-ink: var(--line);
+    --trail-walked: var(--accent-soft);
+
+    position: relative;
+    margin-top: clamp(2.5rem, 6vh, 4rem);
+    display: grid;
+    grid-template-columns: minmax(2.75rem, 4rem) repeat(12, minmax(0, 1fr));
+  }
+
+  .map {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+    pointer-events: none;
+  }
+
+  .map :global(path) {
+    fill: none;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  .map :global(.base) {
+    stroke: var(--trail-ink);
+    stroke-width: 1.5;
+    stroke-dasharray: 4 8;
+  }
+
+  .map :global(.walked) {
+    stroke: var(--trail-walked);
+    stroke-width: 1.75;
+    stroke-dasharray: 4 8;
+  }
+
+  /* ------------------------------------------------------------------
+     Courses
+  ------------------------------------------------------------------- */
+  .courses {
+    display: contents;
+  }
+
+  .course {
+    grid-column: var(--gc);
+    position: relative;
+    z-index: 1;
+    margin-top: clamp(5.5rem, 12vh, 8.5rem);
+  }
+
+  .course:first-child {
+    margin-top: clamp(3.5rem, 8vh, 5.5rem);
+  }
+
+  .term {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    font-family: var(--font-mono);
+    font-size: var(--text-label);
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+  }
+
+  .marker {
+    display: inline-flex;
+    color: var(--ink-faint);
+    transition: color var(--dur-3) var(--ease-out);
+  }
+
+  .course.is-lit .marker {
+    color: var(--accent);
+  }
+
+  .course-title {
+    margin-top: 0.8rem;
+    font-size: clamp(1.3rem, 1.15rem + 0.8vw, 1.7rem);
+    font-weight: 440;
+    letter-spacing: -0.01em;
+    line-height: 1.18;
+    max-width: 24rem;
+  }
+
+  .note {
+    margin-top: 0.6rem;
+    color: var(--ink-secondary);
+    font-size: var(--text-small);
+    line-height: 1.55;
+    max-width: 23rem;
+    text-wrap: pretty;
+  }
+
+  /* faint until the line has passed — arriving, not hidden */
+  :global(.js) .course,
+  :global(.js) .ending {
+    opacity: 0.3;
+    transition: opacity var(--dur-4) var(--ease-out);
+  }
+
+  :global(.js) .course.is-lit,
+  :global(.js) .ending.is-lit {
+    opacity: 1;
+  }
+
+  /* ------------------------------------------------------------------
+     The ending
+  ------------------------------------------------------------------- */
+  .ending {
+    grid-column: 2 / span 8;
+    position: relative;
+    z-index: 1;
+    margin-top: clamp(6rem, 13vh, 9.5rem);
+    margin-bottom: clamp(3rem, 7vh, 5rem);
+  }
+
+  .ending-text {
+    color: var(--ink-secondary);
+    font-size: 1.0625rem;
+  }
+
+  .ending a {
+    display: inline-block;
+    margin-top: 1.2rem;
+    color: var(--ink);
+  }
+
+  /* ------------------------------------------------------------------
+     The walker
+  ------------------------------------------------------------------- */
+  .walker {
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 3;
+    display: grid;
+    place-items: center;
+    width: 17px;
+    height: 17px;
+    color: var(--accent);
+    pointer-events: none;
+    will-change: transform;
+    opacity: 0;
+    transition: opacity var(--dur-3) var(--ease-out);
+  }
+
+  .trail.is-ready .walker {
+    opacity: 1;
+  }
+
+  /* ------------------------------------------------------------------
+     Narrow screens: one rail on the left, everything beside it
+  ------------------------------------------------------------------- */
+  @media (max-width: 900px) {
+    .trail {
+      grid-template-columns: 1.75rem minmax(0, 1fr);
+    }
+
+    .course,
+    .ending {
+      grid-column: 2;
+    }
+
+    .course {
+      margin-top: clamp(4.5rem, 10vh, 6.5rem);
+    }
+
+    .course:first-child {
+      margin-top: clamp(3rem, 7vh, 4.5rem);
+    }
+
+    .ending {
+      margin-top: clamp(5rem, 11vh, 7.5rem);
+    }
+  }
+
+  /* reduced motion: everything already arrived */
+  @media (prefers-reduced-motion: reduce) {
+    :global(.js) .course,
+    :global(.js) .ending {
+      opacity: 1;
+    }
+  }
+</style>
+
+<script>
+  type Pt = { x: number; y: number };
+
+  const root = document.querySelector<HTMLElement>('[data-trail]');
+  if (root) init(root);
+
+  function init(root: HTMLElement) {
+    const svg = root.querySelector<SVGSVGElement>('[data-map]')!;
+    const terrain = svg.querySelector<SVGGElement>('[data-terrain]')!;
+    const walkedG = svg.querySelector<SVGGElement>('[data-walked]')!;
+    const clipRect = svg.querySelector<SVGRectElement>('[data-clip]')!;
+    const walker = root.querySelector<HTMLElement>('[data-walker]')!;
+    const courseEls = Array.from(root.querySelectorAll<HTMLElement>('[data-course]'));
+    const endingEl = root.querySelector<HTMLElement>('[data-ending]')!;
+    const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    const NS = 'http://www.w3.org/2000/svg';
+    const dist = (a: Pt, b: Pt) => Math.hypot(b.x - a.x, b.y - a.y);
+    const fmt = (n: number) => n.toFixed(1);
+
+    let main: SVGPathElement | null = null;
+    let lenAt: (tipY: number) => number = () => 0;
+    let lights: Array<{ el: Element; y: number }> = [];
+    let rootTop = 0;
+    let tip = 0;
+    let cur = 0;
+    let raf = 0;
+    let wHalf = 8.5;
+
+    /* ---- centripetal Catmull-Rom → cubic Béziers (as in Chain.astro) ---- */
+    type Seg = { a: Pt; c1: Pt; c2: Pt; b: Pt };
+
+    function segment(p0: Pt, p1: Pt, p2: Pt, p3: Pt): Seg {
+      const d1 = Math.sqrt(dist(p0, p1));
+      const d2 = Math.sqrt(dist(p1, p2));
+      const d3 = Math.sqrt(dist(p2, p3));
+      let c1 = p1;
+      let c2 = p2;
+      if (d1 > 1e-4 && d2 > 1e-4) {
+        const a = d1 * d1, b = d2 * d2;
+        const k = 3 * d1 * (d1 + d2);
+        c1 = {
+          x: (a * p2.x - b * p0.x + (2 * a + 3 * d1 * d2 + b) * p1.x) / k,
+          y: (a * p2.y - b * p0.y + (2 * a + 3 * d1 * d2 + b) * p1.y) / k,
+        };
+      }
+      if (d3 > 1e-4 && d2 > 1e-4) {
+        const a = d3 * d3, b = d2 * d2;
+        const k = 3 * d3 * (d3 + d2);
+        c2 = {
+          x: (a * p1.x - b * p3.x + (2 * a + 3 * d3 * d2 + b) * p2.x) / k,
+          y: (a * p1.y - b * p3.y + (2 * a + 3 * d3 * d2 + b) * p2.y) / k,
+        };
+      }
+      return { a: p1, c1, c2, b: p2 };
+    }
+
+    function splineOpen(pts: Pt[]): Seg[] {
+      const segs: Seg[] = [];
+      for (let i = 0; i < pts.length - 1; i++) {
+        segs.push(segment(pts[Math.max(0, i - 1)], pts[i], pts[i + 1], pts[Math.min(pts.length - 1, i + 2)]));
+      }
+      return segs;
+    }
+
+    function d(segs: Seg[]): string {
+      if (!segs.length) return '';
+      let out = `M${fmt(segs[0].a.x)} ${fmt(segs[0].a.y)}`;
+      for (const s of segs) {
+        out += `C${fmt(s.c1.x)} ${fmt(s.c1.y)} ${fmt(s.c2.x)} ${fmt(s.c2.y)} ${fmt(s.b.x)} ${fmt(s.b.y)}`;
+      }
+      return out;
+    }
+
+    function path(parent: SVGGElement, dAttr: string, cls: string): SVGPathElement {
+      const el = document.createElementNS(NS, 'path');
+      el.setAttribute('d', dAttr);
+      el.setAttribute('class', cls);
+      parent.appendChild(el);
+      return el;
+    }
+
+    /** running-max-y table: how far along the line the reader has walked */
+    function tableFor(el: SVGGeometryElement, len: number) {
+      const table: Array<{ l: number; y: number }> = [];
+      let maxY = -Infinity;
+      const step = 5;
+      for (let l = 0; l <= len; l += step) {
+        const p = el.getPointAtLength(Math.min(l, len));
+        maxY = Math.max(maxY, p.y);
+        table.push({ l, y: maxY });
+      }
+      table.push({ l: len, y: maxY });
+      return (tipY: number) => {
+        if (tipY < table[0].y) return 0;
+        let lo = 0, hi = table.length - 1;
+        while (lo < hi) {
+          const mid = (lo + hi + 1) >> 1;
+          if (table[mid].y <= tipY) lo = mid;
+          else hi = mid - 1;
+        }
+        return table[lo].l;
+      };
+    }
+
+    /* ---- layout → the line ------------------------------------------- */
+    function build() {
+      terrain.textContent = '';
+      walkedG.textContent = '';
+      lights = [];
+
+      const rootRect = root.getBoundingClientRect();
+      rootTop = rootRect.top + scrollY;
+      const W = root.clientWidth;
+      const H = root.clientHeight;
+      svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+      svg.setAttribute('width', String(W));
+      svg.setAttribute('height', String(H));
+      clipRect.setAttribute('width', String(W));
+      wHalf = (walker.offsetWidth || 17) / 2;
+
+      const narrow = matchMedia('(max-width: 900px)').matches;
+
+      const items = courseEls.map((el) => {
+        const r = el.getBoundingClientRect();
+        return {
+          el,
+          top: r.top - rootRect.top,
+          bottom: r.bottom - rootRect.top,
+          left: r.left - rootRect.left,
+        };
+      });
+      const endR = endingEl.getBoundingClientRect();
+      const endTop = endR.top - rootRect.top;
+      const endLeft = endR.left - rootRect.left;
+
+      const railX = Math.max(10, Math.min(...items.map((i) => i.left), endLeft) - 32);
+
+      /* the line runs down the left margin of each course — beside it,
+         never through it — and swings across in the space between */
+      const pts: Pt[] = [];
+      items.forEach((it, i) => {
+        const x = narrow ? railX + (i % 2 ? 5 : -5) : Math.max(16, it.left - 44);
+        pts.push({ x, y: it.top + 12 });
+        if (!narrow) pts.push({ x: x + 6, y: it.bottom + 16 });
+      });
+      pts.push({
+        x: narrow ? railX : Math.max(16, endLeft - 30),
+        y: endTop + 14,
+      });
+      if (pts.length) {
+        pts.unshift({
+          x: narrow ? railX : pts[0].x + 34,
+          y: Math.max(4, pts[0].y - 120),
+        });
+      }
+
+      main = path(terrain, d(splineOpen(pts)), 'base');
+      const mainLen = main.getTotalLength();
+      lenAt = tableFor(main, mainLen);
+      path(walkedG, main.getAttribute('d')!, 'walked');
+
+      for (const it of items) lights.push({ el: it.el, y: it.top - 8 });
+      lights.push({ el: endingEl, y: endTop - 8 });
+
+      tip = targetTip();
+      if (reduced) {
+        clipRect.setAttribute('height', String(H));
+        for (const l of lights) l.el.classList.add('is-lit');
+        walker.style.display = 'none';
+      } else {
+        cur = lenAt(tip);
+        render(true);
+        root.classList.add('is-ready');
+      }
+    }
+
+    const targetTip = () => scrollY + innerHeight * 0.62 - rootTop;
+
+    function render(snap = false) {
+      if (!main) return true;
+      const target = lenAt(tip);
+      let settled = false;
+      if (snap) {
+        cur = target;
+        settled = true;
+      } else {
+        cur += (target - cur) * 0.14;
+        if (Math.abs(target - cur) < 0.4) {
+          cur = target;
+          settled = true;
+        }
+      }
+      const p = main.getPointAtLength(cur);
+      walker.style.transform = `translate3d(${fmt(p.x - wHalf)}px, ${fmt(p.y - wHalf)}px, 0) rotate(${fmt(cur * 0.85)}deg)`;
+      clipRect.setAttribute('height', fmt(Math.max(0, p.y + 10)));
+      for (const l of lights) {
+        if (tip >= l.y) l.el.classList.add('is-lit');
+      }
+      return settled;
+    }
+
+    function tick() {
+      raf = 0;
+      if (!render()) raf = requestAnimationFrame(tick);
+    }
+
+    function onScroll() {
+      if (reduced) return;
+      tip = targetTip();
+      if (!raf) raf = requestAnimationFrame(tick);
+    }
+
+    function safeBuild() {
+      try {
+        build();
+      } catch (err) {
+        console.error(err);
+        for (const el of [...courseEls, endingEl]) el.classList.add('is-lit');
+        walker.style.display = 'none';
+      }
+    }
+
+    safeBuild();
+    addEventListener('scroll', onScroll, { passive: true });
+
+    let pending = 0;
+    const ro = new ResizeObserver(() => {
+      cancelAnimationFrame(pending);
+      pending = requestAnimationFrame(() => {
+        safeBuild();
+        onScroll();
+      });
+    });
+    ro.observe(root);
+    document.fonts?.ready.then(() => {
+      safeBuild();
+      onScroll();
+    });
+  }
+</script>

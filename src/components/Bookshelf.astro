@@ -1,0 +1,484 @@
+---
+import { Image } from 'astro:assets';
+import type { Book } from '../data/books';
+
+interface Props {
+  shelves: Book[][];
+}
+
+const { shelves } = Astro.props;
+
+const sizeScale: Record<string, number> = { tall: 1, standard: 0.92, short: 0.845 };
+---
+
+<section class="library" data-library>
+  <header class="lib-head">
+    <p class="label">Books</p>
+    <p class="lib-lede">Read, liked, kept. Pull one down.</p>
+  </header>
+
+  {
+    shelves.map((shelf) => (
+      <div class="shelf" data-reveal>
+        <div class="scroller">
+          <div class="shelf-inner">
+            <ul class="row" role="list">
+              {shelf.map((book, i) => (
+                <li
+                  class="slot"
+                  role="listitem"
+                  style={`--i: ${i}; --size: ${sizeScale[book.size ?? 'standard']}; --tilt: ${book.tilt ?? 0}deg`}
+                >
+                  <button
+                    class="book"
+                    type="button"
+                    data-book
+                    data-title={book.title}
+                    data-author={book.author}
+                    aria-label={`${book.title} — ${book.author}`}
+                    aria-haspopup="dialog"
+                  >
+                    <span class="jacket">
+                      <Image
+                        src={book.cover}
+                        alt=""
+                        format="webp"
+                        quality={82}
+                        loading="lazy"
+                        decoding="async"
+                      />
+                    </span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+            <div class="board" aria-hidden="true"></div>
+          </div>
+        </div>
+      </div>
+    ))
+  }
+
+  <div class="stage" data-stage role="dialog" aria-modal="true" hidden>
+    <div class="veil" data-veil></div>
+    <figure class="held" data-held>
+      <img data-held-img alt="" />
+    </figure>
+    <div class="meta" data-meta>
+      <p class="m-title" data-m-title></p>
+      <p class="label m-author" data-m-author></p>
+      <button class="draw-link putback" type="button" data-putback>Put it back</button>
+    </div>
+  </div>
+</section>
+
+<style>
+  /* ------------------------------------------------------------------
+     Two ledges in the paper room. The books provide the color;
+     everything around them stays quiet.
+  ------------------------------------------------------------------- */
+  .library {
+    /* sized so the fuller shelf fits the column on wide screens;
+       below 1020px the shelves become pannable instead of shrinking
+       the books into thumbnails */
+    --shelf-h: clamp(138px, 15vw - 15px, 153px);
+    --board: #ded3c2;
+    --board-edge: #c3b6a1;
+    --shadow: 25, 20, 14;
+
+    margin-top: clamp(3rem, 8vh, 5rem);
+  }
+
+  :global([data-theme='dark']) .library {
+    --board: #26211b;
+    --board-edge: #3b332a;
+    --shadow: 0, 0, 0;
+  }
+
+  .lib-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.5rem 1.5rem;
+    flex-wrap: wrap;
+  }
+
+  .lib-lede {
+    font-style: italic;
+    color: var(--ink-secondary);
+    font-size: var(--text-small);
+  }
+
+  .shelf {
+    margin-top: clamp(2.6rem, 6vh, 4rem);
+  }
+
+  .scroller {
+    /* becomes a horizontal pan on narrow screens */
+    overflow: visible;
+  }
+
+  .shelf-inner {
+    min-width: 100%;
+    width: max-content;
+  }
+
+  .row {
+    display: flex;
+    align-items: flex-end;
+    gap: clamp(7px, 1vw, 12px);
+    padding-inline: clamp(4px, 1vw, 14px);
+  }
+
+  .slot {
+    position: relative;
+  }
+
+  .slot:has(.book:hover),
+  .slot:has(.book:focus-visible) {
+    z-index: 5;
+  }
+
+  .book {
+    display: block;
+    padding: 0;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .jacket {
+    display: block;
+    transform: rotate(var(--tilt));
+    transform-origin: 50% 100%;
+    box-shadow:
+      0 1px 2px rgba(var(--shadow), 0.3),
+      0 12px 16px -12px rgba(var(--shadow), 0.38);
+    transition:
+      transform var(--dur-2) var(--ease-out),
+      box-shadow var(--dur-2) var(--ease-out);
+    will-change: transform;
+  }
+
+  .jacket :global(img) {
+    display: block;
+    height: calc(var(--shelf-h) * var(--size));
+    width: auto;
+  }
+
+  /* the book being put away is a gap on the shelf, not a ghost */
+  .book.is-away {
+    visibility: hidden;
+  }
+
+  /* ------------------------------------------------------------------
+     The pull: hover slides the book toward you; neighbors give it room
+  ------------------------------------------------------------------- */
+  @media (hover: hover) and (pointer: fine) {
+    .book:hover .jacket {
+      transform: perspective(900px) translate3d(0, -8px, 34px) rotateY(-4deg)
+        rotate(calc(var(--tilt) * 0.4));
+      box-shadow:
+        0 4px 8px rgba(var(--shadow), 0.26),
+        0 26px 34px -18px rgba(var(--shadow), 0.5);
+    }
+
+    .slot:has(.book:hover) + .slot .jacket {
+      transform: rotate(var(--tilt)) translateX(4px);
+    }
+
+    .slot:has(+ .slot .book:hover) .jacket {
+      transform: rotate(var(--tilt)) translateX(-4px);
+    }
+  }
+
+  .book:focus-visible .jacket {
+    transform: perspective(900px) translate3d(0, -8px, 34px) rotateY(-4deg)
+      rotate(calc(var(--tilt) * 0.4));
+    box-shadow:
+      0 4px 8px rgba(var(--shadow), 0.26),
+      0 26px 34px -18px rgba(var(--shadow), 0.5);
+  }
+
+  /* ------------------------------------------------------------------
+     The ledge
+  ------------------------------------------------------------------- */
+  .board {
+    height: 11px;
+    margin-top: 0;
+    background: var(--board);
+    border-top: 1px solid var(--board-edge);
+    box-shadow:
+      0 1px 0 rgba(var(--shadow), 0.12),
+      0 14px 18px -13px rgba(var(--shadow), 0.5);
+  }
+
+  /* ------------------------------------------------------------------
+     Books arrive on the shelf as it reveals
+  ------------------------------------------------------------------- */
+  :global(.js) .shelf[data-reveal] .slot {
+    opacity: 0;
+    transform: translateY(9px);
+  }
+
+  :global(.js) .shelf[data-reveal].is-revealed .slot {
+    opacity: 1;
+    transform: none;
+    transition:
+      opacity var(--dur-3) var(--ease-out) calc(var(--i) * 38ms),
+      transform var(--dur-3) var(--ease-out) calc(var(--i) * 38ms);
+  }
+
+  /* ------------------------------------------------------------------
+     Holding a book: the shelf stays in the room, ghosted
+  ------------------------------------------------------------------- */
+  .stage {
+    position: fixed;
+    inset: 0;
+    z-index: 60;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1.4rem;
+    padding: clamp(1rem, 4vh, 2.5rem);
+  }
+
+  .stage[hidden] {
+    display: none;
+  }
+
+  .veil {
+    position: absolute;
+    inset: 0;
+    background: color-mix(in srgb, var(--bg) 88%, transparent);
+    opacity: 0;
+    transition: opacity var(--dur-2) var(--ease-out);
+  }
+
+  .stage.is-open .veil {
+    opacity: 1;
+  }
+
+  .held {
+    position: relative;
+    z-index: 1;
+    margin: 0;
+    transform-origin: top left;
+    cursor: zoom-out;
+  }
+
+  .held img {
+    display: block;
+    height: min(60svh, 520px);
+    width: auto;
+    max-width: 84vw;
+    box-shadow:
+      0 8px 18px -10px rgba(var(--shadow), 0.4),
+      0 42px 70px -32px rgba(var(--shadow), 0.6);
+  }
+
+  .meta {
+    position: relative;
+    z-index: 1;
+    text-align: center;
+    opacity: 0;
+    transform: translateY(6px);
+    transition:
+      opacity var(--dur-3) var(--ease-out),
+      transform var(--dur-3) var(--ease-out);
+  }
+
+  .stage.is-settled .meta {
+    opacity: 1;
+    transform: none;
+  }
+
+  .m-title {
+    font-family: var(--font-display);
+    font-size: 1.15rem;
+    font-weight: 450;
+    letter-spacing: -0.005em;
+    max-width: 26rem;
+    text-wrap: balance;
+  }
+
+  .m-author {
+    margin-top: 0.45rem;
+  }
+
+  .putback {
+    margin-top: 1.3rem;
+    color: var(--ink);
+  }
+
+  /* while a book is held, the page underneath stays put */
+  :global(:root.holding-book) {
+    overflow: hidden;
+  }
+
+  /* ------------------------------------------------------------------
+     Narrower screens: the shelves keep their books at full size;
+     you pan along them instead
+  ------------------------------------------------------------------- */
+  @media (max-width: 1020px) {
+    .scroller {
+      overflow-x: auto;
+      overflow-y: hidden;
+      padding-top: 18px; /* room for the lifted focus state */
+      margin-inline: calc(-1 * var(--pad-x));
+      padding-inline: var(--pad-x);
+      scrollbar-width: none;
+    }
+
+    .scroller::-webkit-scrollbar {
+      display: none;
+    }
+  }
+
+  @media (max-width: 700px) {
+    .library {
+      --shelf-h: 132px;
+    }
+
+    .held img {
+      height: auto;
+      width: min(72vw, 320px);
+      max-height: 58svh;
+    }
+  }
+
+  /* reduced motion: same shelf, same interactions, no theatre */
+  @media (prefers-reduced-motion: reduce) {
+    :global(.js) .shelf[data-reveal] .slot {
+      opacity: 1;
+      transform: none;
+    }
+
+    .meta {
+      opacity: 1;
+      transform: none;
+    }
+  }
+</style>
+
+<script>
+  const root = document.querySelector<HTMLElement>('[data-library]');
+  if (root) init(root);
+
+  function init(root: HTMLElement) {
+    const stage = root.querySelector<HTMLElement>('[data-stage]')!;
+    const veil = stage.querySelector<HTMLElement>('[data-veil]')!;
+    const held = stage.querySelector<HTMLElement>('[data-held]')!;
+    const heldImg = stage.querySelector<HTMLImageElement>('[data-held-img]')!;
+    const mTitle = stage.querySelector<HTMLElement>('[data-m-title]')!;
+    const mAuthor = stage.querySelector<HTMLElement>('[data-m-author]')!;
+    const putback = stage.querySelector<HTMLButtonElement>('[data-putback]')!;
+    const books = Array.from(root.querySelectorAll<HTMLButtonElement>('[data-book]'));
+    const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    let state: 'idle' | 'opening' | 'held' | 'closing' = 'idle';
+    let source: HTMLButtonElement | null = null;
+
+    const sourceImg = () => source?.querySelector<HTMLImageElement>('img') ?? null;
+
+    /** transform that maps the held book onto the shelf copy */
+    function inverseTransform(): string {
+      const img = sourceImg();
+      if (!img) return 'none';
+      const from = img.getBoundingClientRect();
+      const to = heldImg.getBoundingClientRect();
+      const s = from.width / to.width;
+      const slot = source?.closest<HTMLElement>('.slot');
+      const tilt = slot ? parseFloat(getComputedStyle(slot).getPropertyValue('--tilt')) || 0 : 0;
+      return `translate(${(from.left - to.left).toFixed(1)}px, ${(from.top - to.top).toFixed(1)}px) scale(${s.toFixed(4)}) rotate(${tilt}deg)`;
+    }
+
+    async function pickUp(btn: HTMLButtonElement) {
+      if (state !== 'idle') return;
+      state = 'opening';
+      source = btn;
+
+      const img = sourceImg()!;
+      heldImg.src = img.currentSrc || img.src;
+      heldImg.alt = `Cover of ${btn.dataset.title}`;
+      mTitle.textContent = btn.dataset.title ?? '';
+      mAuthor.textContent = btn.dataset.author ?? '';
+      stage.setAttribute('aria-label', `${btn.dataset.title} — ${btn.dataset.author}`);
+
+      document.documentElement.classList.add('holding-book');
+      stage.hidden = false;
+      requestAnimationFrame(() => stage.classList.add('is-open'));
+
+      const from = inverseTransform();
+      btn.classList.add('is-away');
+
+      const flight = held.animate(
+        [{ transform: from }, { transform: 'none' }],
+        {
+          duration: reduced ? 0 : 460,
+          easing: 'cubic-bezier(0.3, 0.9, 0.24, 1.04)',
+          fill: 'both',
+        }
+      );
+      putback.focus({ preventScroll: true });
+      await flight.finished.catch(() => {});
+      stage.classList.add('is-settled');
+      state = 'held';
+    }
+
+    async function putBack() {
+      if (state !== 'held') return;
+      state = 'closing';
+      stage.classList.remove('is-settled');
+
+      const to = inverseTransform();
+      const flight = held.animate(
+        [{ transform: 'none' }, { transform: to }],
+        {
+          duration: reduced ? 0 : 380,
+          easing: 'cubic-bezier(0.4, 0, 0.3, 1)',
+          fill: 'both',
+        }
+      );
+      stage.classList.remove('is-open');
+      await flight.finished.catch(() => {});
+
+      stage.hidden = true;
+      source?.classList.remove('is-away');
+      document.documentElement.classList.remove('holding-book');
+      source?.focus({ preventScroll: true });
+      source = null;
+      state = 'idle';
+    }
+
+    for (const btn of books) {
+      btn.addEventListener('click', () => pickUp(btn));
+    }
+
+    veil.addEventListener('click', putBack);
+    held.addEventListener('click', putBack);
+    putback.addEventListener('click', putBack);
+
+    document.addEventListener('keydown', (e) => {
+      if (stage.hidden) return;
+      if (e.key === 'Escape') putBack();
+      if (e.key === 'Tab') {
+        // the stage has one control; keep focus on it
+        e.preventDefault();
+        putback.focus();
+      }
+    });
+
+    // a held book doesn't survive a reflow; put it back instantly
+    addEventListener('resize', () => {
+      if (state !== 'held') return;
+      state = 'closing';
+      stage.hidden = true;
+      stage.classList.remove('is-open', 'is-settled');
+      source?.classList.remove('is-away');
+      document.documentElement.classList.remove('holding-book');
+      source = null;
+      state = 'idle';
+    });
+  }
+</script>

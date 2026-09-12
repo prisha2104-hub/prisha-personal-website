@@ -2,22 +2,94 @@
 import Base from '../layouts/Base.astro';
 import SectionIntro from '../components/SectionIntro.astro';
 import Scaffold from '../components/Scaffold.astro';
+import Semester from '../components/Semester.astro';
+import { dateline, inProgress, semester } from '../data/now';
 ---
 
-<Base title="Now" description="What I’m building, reading, and turning over at the moment.">
+<Base title="Now" description="What I’m building and studying at the moment.">
   <div class="wrap">
     <SectionIntro num="04" title="Now">
-      <p>A snapshot, not a monument. This page changes whenever things change, which is often.</p>
+      <p>This page changes whenever things do, which is often.</p>
     </SectionIntro>
-    <Scaffold
-      items={[
-        { name: 'Currently building', hint: 'Universal Asset Analyzer' },
-        { name: 'Currently reading', hint: 'to be confessed here' },
-        { name: 'Recently read', hint: 'with margin notes' },
-        { name: 'Learning', hint: 'in public, reluctantly' },
-        { name: 'Thinking about', hint: 'the open tabs of the mind' },
-      ]}
-      note="Being written. The structure above is real; the content arrives in a later phase."
-    />
+
+    <p class="dateline label">As of {dateline.value}</p>
+
+    <Scaffold heading="In progress" items={inProgress} />
+
+    <div data-reveal>
+      <Semester {...semester} />
+    </div>
+
+    <section class="onward" data-reveal>
+      <svg class="lead" viewBox="0 0 72 150" aria-hidden="true">
+        <path d="M10 2 C 4 42, 62 46, 55 86 C 50 114, 22 116, 30 148" fill="none"></path>
+      </svg>
+      <div class="onward-inner">
+        <p class="onward-copy prose">
+          Most of this semester builds on earlier coursework. That has a page of its own.
+        </p>
+        <a class="draw-link onward-link" href="/academic-trail">
+          <span>Explore the academic trail</span>
+          <span class="arrow" aria-hidden="true">→</span>
+        </a>
+      </div>
+    </section>
   </div>
 </Base>
+
+<style>
+  .dateline {
+    margin-top: 2.2rem;
+  }
+
+  .onward {
+    display: flex;
+    align-items: stretch;
+    gap: clamp(1.4rem, 4vw, 2.6rem);
+    margin-top: clamp(4rem, 9vh, 6rem);
+    max-width: 40rem;
+  }
+
+  .lead {
+    flex: 0 0 auto;
+    width: 46px;
+    stroke: var(--accent-soft);
+    stroke-width: 1.5;
+    stroke-linecap: round;
+    stroke-dasharray: 4 8;
+  }
+
+  .onward-inner {
+    align-self: center;
+  }
+
+  .onward-copy {
+    color: var(--ink-secondary);
+  }
+
+  .onward-link {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 0.5em;
+    margin-top: 1.6rem;
+    color: var(--ink);
+  }
+
+  .onward-link .arrow {
+    font-size: 0.9rem;
+    color: var(--ink-faint);
+    transition: transform var(--dur-2) var(--ease-out), color var(--dur-1) var(--ease-out);
+  }
+
+  .onward-link:hover .arrow,
+  .onward-link:focus-visible .arrow {
+    transform: translateX(4px);
+    color: var(--accent);
+  }
+
+  @media (max-width: 540px) {
+    .lead {
+      display: none;
+    }
+  }
+</style>
