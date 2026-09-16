@@ -59,6 +59,22 @@ import { dateline, inProgress, semester } from '../data/now';
     stroke-dasharray: 4 8;
   }
 
+  /* the dotted line inks in top-to-bottom once the section arrives */
+  :global(.js) .onward[data-reveal] .lead {
+    clip-path: inset(0 0 100% 0);
+    transition: clip-path 900ms var(--ease-out) 200ms;
+  }
+
+  :global(.js) .onward[data-reveal].is-revealed .lead {
+    clip-path: inset(0 0 0 0);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    :global(.js) .onward[data-reveal] .lead {
+      clip-path: none;
+    }
+  }
+
   .onward-inner {
     align-self: center;
   }

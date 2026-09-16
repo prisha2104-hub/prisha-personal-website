@@ -10,7 +10,7 @@ export const sections: Section[] = [
     num: '01',
     title: 'Home',
     slug: '/',
-    blurb: 'you are here',
+    blurb: 'back to the start',
   },
   {
     num: '02',
@@ -32,18 +32,12 @@ export const sections: Section[] = [
   },
   {
     num: '05',
-    title: 'What I build',
-    slug: '/building',
-    blurb: 'UAA, this site, and write-ups to come',
-  },
-  {
-    num: '06',
     title: 'Elsewhere',
     slug: '/elsewhere',
     blurb: 'books, rabbit holes, and other off-résumé material',
   },
   {
-    num: '07',
+    num: '06',
     title: 'The conventional version',
     slug: '/conventional',
     blurb: 'the résumé, for those who need it',

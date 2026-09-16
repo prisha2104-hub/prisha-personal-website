@@ -20,7 +20,7 @@ export interface WorkItem {
 export const inProgress: WorkItem[] = [
   {
     name: 'Universal Asset Analyzer',
-    href: '/uaa',
+    href: '/one-thing-led-to-another#uaa',
     hint: 'investment research, in one place',
   },
   {
@@ -29,7 +29,7 @@ export const inProgress: WorkItem[] = [
   },
   {
     name: 'This site',
-    hint: 'still being furnished',
+    hint: 'you’re looking at it',
   },
 ];
 

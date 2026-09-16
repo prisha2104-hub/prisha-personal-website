@@ -86,23 +86,21 @@ const { moments } = Astro.props;
                 </div>
               )}
 
-              {m.product && (
-                <div class="product">
-                  <p class="product-name">{m.product.name}</p>
-                  <a class="more" href={m.product.href}>
-                    <span class="more-text">{m.product.cta}</span>
-                    <span class="arrow" aria-hidden="true">→</span>
-                  </a>
-                  <ul class="peek" aria-hidden="true">
-                    {m.product.peek.map((p, j) => (
-                      <li style={`--i: ${j}`}>{p}</li>
+              {ev && ev.kind === 'window' && (
+                <div class="evidence ev-window" id={evId} data-evidence>
+                  <p class="ev-note label">{ev.note}</p>
+                  <ul class="pane">
+                    {ev.items.map((t, j) => (
+                      <li class="item" style={`--i: ${j}`}>
+                        {t}
+                      </li>
                     ))}
                   </ul>
                 </div>
               )}
             </div>
 
-            {ev && ev.kind !== 'tabs' && (
+            {ev && ev.kind !== 'tabs' && ev.kind !== 'window' && (
               <div class:list={['evidence', `ev-${ev.kind}`]} id={evId} data-evidence>
                 <div class="inner">
                   <p class="ev-note label item" style="--i: -1">
@@ -305,6 +303,8 @@ const { moments } = Astro.props;
     font-style: italic;
     font-weight: 420;
     font-size: clamp(1.375rem, 1.1rem + 1.05vw, 1.9rem);
+    /* Fraunces' wonky alternates: only the thought is allowed them */
+    font-variation-settings: 'WONK' 1, 'SOFT' 55;
   }
 
   .detail {
@@ -586,87 +586,53 @@ const { moments } = Astro.props;
   }
 
   /* ------------------------------------------------------------------
-     The product, at the end of the line
+     The window: the tabs from the thought, settled into one frame.
+     No trigger — it arrives with the moment, once the line does.
   ------------------------------------------------------------------- */
-  .product {
-    margin-top: 1.7rem;
+  .ev-window {
+    position: static;
+    width: auto;
+    visibility: visible;
+    pointer-events: none;
+    margin-top: 1.6rem;
+    max-width: 30rem;
+  }
+
+  .ev-window .ev-note {
+    font-size: 0.65rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .pane {
     display: flex;
     flex-wrap: wrap;
     align-items: baseline;
-    gap: 0.35rem 1.4rem;
+    gap: 0.4rem 1rem;
+    border: 1px solid var(--ev-line);
+    padding: 0.75rem 1rem;
   }
 
-  .product-name {
-    font-family: var(--font-display);
-    font-size: 1.2rem;
-    font-weight: 500;
-    letter-spacing: -0.005em;
-  }
-
-  .more {
-    display: inline-flex;
-    align-items: baseline;
-    gap: 0.45em;
-    font-family: var(--font-mono);
-    font-size: 0.8125rem;
-    letter-spacing: 0.04em;
-    color: var(--accent);
-    text-decoration: none;
-    padding-block: 0.4rem;
-  }
-
-  .more-text {
-    background-image: linear-gradient(currentColor, currentColor);
-    background-size: 0% 1px;
-    background-repeat: no-repeat;
-    background-position: 0 100%;
-    padding-bottom: 2px;
-    transition: background-size var(--dur-2) var(--ease-out);
-  }
-
-  .more .arrow {
-    transition: transform var(--dur-2) var(--ease-out);
-  }
-
-  .more:hover .more-text,
-  .more:focus-visible .more-text {
-    background-size: 100% 1px;
-  }
-
-  .more:hover .arrow,
-  .more:focus-visible .arrow {
-    transform: translateX(4px);
-  }
-
-  .peek {
-    flex-basis: 100%;
-    display: flex;
-    gap: 0.9rem;
-    min-height: 1.3rem;
+  .ev-window .item {
     font-family: var(--font-mono);
     font-size: 0.75rem;
-    letter-spacing: 0.04em;
-    color: var(--ink-faint);
+    letter-spacing: 0.02em;
+    line-height: 1.3;
+    color: var(--ev-ink);
   }
 
-  .peek li {
-    opacity: 0;
-    transform: translateX(-4px);
-    transition:
-      opacity var(--ev-exit) var(--ease-out),
-      transform var(--ev-exit) var(--ease-out);
-  }
-
-  .peek li + li::before {
-    content: '·';
-    margin-right: 0.9rem;
-  }
-
-  .product:has(.more:hover) .peek li,
-  .product:has(.more:focus-visible) .peek li {
+  /* without JS nothing lights, so the window must not hide its contents */
+  :global(html:not(.js)) .ev-window .item {
     opacity: 1;
     transform: none;
-    transition-delay: calc(60ms + var(--i) * 60ms);
+  }
+
+  /* each strand arrives after the line has reached the moment */
+  .moment.is-lit .ev-window .item {
+    opacity: 1;
+    transform: none;
+    transition:
+      opacity var(--ev-enter) var(--ease-out) calc(600ms + var(--i) * 110ms),
+      transform var(--ev-enter) var(--ease-out) calc(600ms + var(--i) * 110ms);
   }
 
   /* ------------------------------------------------------------------
@@ -732,7 +698,7 @@ const { moments } = Astro.props;
       margin-top: clamp(5.5rem, 13vh, 8rem);
     }
 
-    .evidence:not(.ev-tabs) {
+    .evidence:not(.ev-tabs):not(.ev-window) {
       position: static;
       width: auto;
       display: grid;
@@ -743,19 +709,23 @@ const { moments } = Astro.props;
         visibility 0s linear var(--dur-3);
     }
 
-    .evidence:not(.ev-tabs) .inner {
+    .evidence:not(.ev-tabs):not(.ev-window) .inner {
       min-height: 0;
       overflow: hidden;
     }
 
-    .moment.is-open .evidence:not(.ev-tabs),
-    .moment:has(.term:focus-visible) .evidence:not(.ev-tabs) {
+    .moment.is-open .evidence:not(.ev-tabs):not(.ev-window),
+    .moment:has(.term:focus-visible) .evidence:not(.ev-tabs):not(.ev-window) {
       grid-template-rows: 1fr;
       transition-delay: 0s;
     }
 
-    .moment.is-open .evidence:not(.ev-tabs) .inner {
+    .moment.is-open .evidence:not(.ev-tabs):not(.ev-window) .inner {
       padding-top: 1.1rem;
+    }
+
+    .ev-window {
+      max-width: none;
     }
 
     .ev-clippings li:nth-child(even) {
@@ -783,7 +753,7 @@ const { moments } = Astro.props;
 
   @media (max-width: 960px) and (hover: none) {
     /* touch: hovering does not exist, so a sticky hover must not open things */
-    .moment:has(.term:hover):not(.is-open) .evidence:not(.ev-tabs) .item {
+    .moment:has(.term:hover):not(.is-open) .evidence:not(.ev-tabs):not(.ev-window) .item {
       opacity: 0;
       transform: translateY(6px);
     }

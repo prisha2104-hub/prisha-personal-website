@@ -184,7 +184,7 @@ export const sections: DocSection[] = [
           { label: 'portfolio', text: 'portfolio analytics' },
           { label: 'research', text: 'AI-powered research capabilities' },
         ],
-        link: { label: 'The longer story', href: '/uaa' },
+        link: { label: 'The longer story', href: '/one-thing-led-to-another#uaa' },
       },
       {
         what: 'Independent Researcher',

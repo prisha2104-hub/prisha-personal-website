@@ -39,38 +39,40 @@ const lensPayload = JSON.stringify({
         ))
       }
     </div>
-    <p class="grind">More lenses being ground — Mumbai, among others.</p>
+    <p class="grind">Others exist. These are the ones with photographs.</p>
   </div>
 
   <figure class="stage-col">
     <div class="stage" data-stage>
-      {
-        plateEntries.map(([key, img]) => (
-          <Image
-            class:list={['plate', { 'is-active': key === 'portrait' }]}
-            data-plate={key}
-            src={img}
-            alt={plateAlts[key]}
-            aria-hidden={key === 'portrait' ? undefined : 'true'}
-            widths={[480, 760, 1024]}
-            sizes="(max-width: 900px) 94vw, 480px"
-            loading={key === 'portrait' ? 'eager' : 'lazy'}
-          />
-        ))
-      }
-      {
-        lenses
-          .filter((l) => l.annotations?.length)
-          .map((lens) => (
-            <div class="notes" data-notes={lens.id}>
-              {lens.annotations!.map((a, i) => (
-                <span class={`anno anno-${a.pos}`} style={`--d: ${i}`}>
-                  {a.text}
-                </span>
-              ))}
-            </div>
+      <div class="plate-box" data-plate-box>
+        {
+          plateEntries.map(([key, img]) => (
+            <Image
+              class:list={['plate', { 'is-active': key === 'portrait' }]}
+              data-plate={key}
+              src={img}
+              alt={plateAlts[key]}
+              aria-hidden={key === 'portrait' ? undefined : 'true'}
+              widths={[480, 760, 1024]}
+              sizes="(max-width: 900px) 94vw, 480px"
+              loading={key === 'portrait' ? 'eager' : 'lazy'}
+            />
           ))
-      }
+        }
+        {
+          lenses
+            .filter((l) => l.annotations?.length)
+            .map((lens) => (
+              <div class="notes" data-notes={lens.id}>
+                {lens.annotations!.map((a, i) => (
+                  <span class={`anno anno-${a.pos}`} style={`--d: ${i}`}>
+                    {a.text}
+                  </span>
+                ))}
+              </div>
+            ))
+        }
+      </div>
     </div>
     <figcaption class="fig" data-fig>
       <span class="fig-num label" data-fig-num>{control.fig}</span>
@@ -187,12 +189,39 @@ const lensPayload = JSON.stringify({
     width: 100%;
   }
 
+  /* a mounted print: hairline frame, narrow mat, then the plate */
   .stage {
+    position: relative;
+    border: 1px solid var(--line);
+    background: var(--bg-raised);
+    padding: clamp(8px, 1.1vw, 12px);
+  }
+
+  .plate-box {
     position: relative;
     aspect-ratio: 4 / 5;
     overflow: hidden;
-    border: 1px solid var(--line);
-    background: var(--bg-raised);
+    background: var(--bg);
+  }
+
+  /* the projector blink between slides */
+  .plate-box::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: #14100b;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .plate-box.is-advancing::after {
+    animation: plate-blink 400ms var(--ease-in-out);
+  }
+
+  @keyframes plate-blink {
+    30% {
+      opacity: 0.09;
+    }
   }
 
   .plate {
@@ -207,6 +236,13 @@ const lensPayload = JSON.stringify({
 
   .plate.is-active {
     opacity: 1;
+    animation: plate-settle 620ms var(--ease-out);
+  }
+
+  @keyframes plate-settle {
+    from {
+      transform: scale(1.014);
+    }
   }
 
   .plate[data-plate='markets'] {
@@ -356,6 +392,7 @@ const lensPayload = JSON.stringify({
     const buttons = Array.from(root.querySelectorAll<HTMLButtonElement>('[data-lens-btn]'));
     const platesEls = Array.from(root.querySelectorAll<HTMLElement>('[data-plate]'));
     const notesEls = Array.from(root.querySelectorAll<HTMLElement>('[data-notes]'));
+    const plateBox = root.querySelector<HTMLElement>('[data-plate-box]');
     const marker = root.querySelector<HTMLElement>('[data-marker]');
     const fig = root.querySelector<HTMLElement>('[data-fig]');
     const figNum = root.querySelector<HTMLElement>('[data-fig-num]');
@@ -396,6 +433,13 @@ const lensPayload = JSON.stringify({
       const wasActive = active;
       active = id;
       const entry = id ? data.lenses[id] : data.control;
+
+      // the projector advances: a brief blink while the slide changes
+      if (plateBox && !reduced()) {
+        plateBox.classList.remove('is-advancing');
+        void plateBox.offsetWidth;
+        plateBox.classList.add('is-advancing');
+      }
 
       buttons.forEach((btn) => {
         const on = btn.dataset.lensBtn === id;

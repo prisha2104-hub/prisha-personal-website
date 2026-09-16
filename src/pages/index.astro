@@ -5,38 +5,72 @@ import IndexList from '../components/IndexList.astro';
 ---
 
 <Base home>
-  <section class="intro wrap">
-    <p class="label">01 / 08</p>
-    <h1>Prisha Agarwal</h1>
-    <div class="prose copy">
-      <p>
-        I study economics and mathematics at Barnard College in New York, and TA Calculus III for
-        the Columbia math department.
-      </p>
-      <p>
-        <Note id="note-markets" note="The financial kind, mostly. I’m told there are other kinds.">Markets</Note>{' '}have
-        been the constant since high school in Mumbai: an independent study on whether investors
-        anchor to old prices, a research summer at HDFC Asset Management, and now Universal Asset
-        Analyzer — software I’m building with a friend to fit filings, screeners, models and notes
-        into one window.
-      </p>
-      <p>
-        The sequence connecting those is drawn — literally — at{' '}
-        <a href="/one-thing-led-to-another">one thing led to another</a>. If you only came to
-        verify employment, <a href="/conventional">the conventional version</a> is one page and
-        very well behaved.
-      </p>
-    </div>
-  </section>
+  <div class="home" data-home>
+    <svg class="thread" data-thread aria-hidden="true"></svg>
 
-  <section class="wrap index-section">
-    <IndexList />
-    <p class="furnishing">Parts of this place are still being furnished. The load-bearing walls are up.</p>
-  </section>
+    <section class="intro wrap">
+      <p class="label">01 / 07</p>
+      <h1><span class="h1-text" data-h1-text>Prisha Agarwal</span></h1>
+      <div class="prose copy">
+        <p>
+          I study economics and mathematics at Barnard College in New York, and TA Calculus III for
+          the Columbia math department.
+        </p>
+        <p>
+          <Note id="note-markets" note="The financial kind.">Markets</Note>{' '}have
+          been the constant since high school in Mumbai: an independent study on whether investors
+          anchor to old prices, a research summer at HDFC Asset Management, and now Universal Asset
+          Analyzer — software I’m building with a friend to fit filings, screeners, models and notes
+          into one window.
+        </p>
+        <p>
+          The line from each of those to the next is drawn at{' '}
+          <a href="/one-thing-led-to-another">one thing led to another</a>. If you only came to
+          verify employment, <a href="/conventional">the conventional version</a> is the résumé,
+          on one page.
+        </p>
+      </div>
+    </section>
+
+    <section class="wrap index-section">
+      <IndexList />
+      <p class="furnishing" data-reveal>Some pages are further along than others.</p>
+    </section>
+  </div>
 </Base>
 
 <style>
+  .home {
+    position: relative;
+  }
+
+  /* the thread: the same line that draws the rest of the site, arriving here first */
+  .thread {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+    pointer-events: none;
+  }
+
+  .thread :global(.thread-line) {
+    fill: none;
+    stroke: var(--accent-soft);
+    stroke-width: 1.25px;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  .thread :global(.thread-mark) {
+    fill: none;
+    stroke: var(--accent);
+    stroke-width: 1.6px;
+    stroke-linecap: round;
+  }
+
   .intro {
+    position: relative;
     padding-top: clamp(4rem, 12vh, 8rem);
   }
 
@@ -55,7 +89,28 @@ import IndexList from '../components/IndexList.astro';
     margin-top: 1.25em;
   }
 
+  /* arrival: the front door opens in order */
+  @keyframes rise {
+    from {
+      opacity: 0;
+      transform: translateY(12px);
+    }
+  }
+
+  :global(.js) .intro .label {
+    animation: rise var(--dur-4) var(--ease-out) backwards;
+  }
+
+  :global(.js) .intro h1 {
+    animation: rise var(--dur-4) var(--ease-out) 80ms backwards;
+  }
+
+  :global(.js) .intro .copy {
+    animation: rise var(--dur-4) var(--ease-out) 170ms backwards;
+  }
+
   .index-section {
+    position: relative;
     margin-top: clamp(4.5rem, 11vh, 7.5rem);
   }
 
@@ -65,4 +120,279 @@ import IndexList from '../components/IndexList.astro';
     color: var(--ink-faint);
     font-size: var(--text-small);
   }
+
+  @media (max-width: 959px) {
+    .thread {
+      display: none;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    :global(.js) .intro .label,
+    :global(.js) .intro h1,
+    :global(.js) .intro .copy {
+      animation: none;
+    }
+  }
 </style>
+
+<script>
+  type Pt = { x: number; y: number };
+
+  const root = document.querySelector<HTMLElement>('[data-home]');
+  const svg = root?.querySelector<SVGSVGElement>('[data-thread]');
+  if (root && svg) init(root, svg);
+
+  function init(root: HTMLElement, svg: SVGSVGElement) {
+    const NS = 'http://www.w3.org/2000/svg';
+    const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const narrow = () => matchMedia('(max-width: 959px)').matches;
+
+    const h1El = root.querySelector<HTMLElement>('[data-h1-text]');
+    const copyEl = root.querySelector<HTMLElement>('.copy');
+    const labelEl = root.querySelector<HTMLElement>('.index-section .label');
+    if (!h1El || !copyEl || !labelEl) return;
+    const h1: HTMLElement = h1El;
+    const copy: HTMLElement = copyEl;
+    const label: HTMLElement = labelEl;
+
+    interface Stroke {
+      el: SVGGeometryElement;
+      len: number;
+      cur: number;
+      at: (tipY: number) => number;
+    }
+
+    let strokes: Stroke[] = [];
+    let rootTop = 0;
+    let tip = 0;
+    let raf = 0;
+
+    const fmt = (n: number) => n.toFixed(1);
+    const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
+    const dist = (a: Pt, b: Pt) => Math.hypot(b.x - a.x, b.y - a.y);
+
+    /* centripetal Catmull-Rom → cubic Béziers, as in Chain.astro */
+    type Seg = { a: Pt; c1: Pt; c2: Pt; b: Pt };
+
+    function segment(p0: Pt, p1: Pt, p2: Pt, p3: Pt): Seg {
+      const d1 = Math.sqrt(dist(p0, p1));
+      const d2 = Math.sqrt(dist(p1, p2));
+      const d3 = Math.sqrt(dist(p2, p3));
+      let c1 = p1;
+      let c2 = p2;
+      if (d1 > 1e-4 && d2 > 1e-4) {
+        const a = d1 * d1, b = d2 * d2;
+        const k = 3 * d1 * (d1 + d2);
+        c1 = {
+          x: (a * p2.x - b * p0.x + (2 * a + 3 * d1 * d2 + b) * p1.x) / k,
+          y: (a * p2.y - b * p0.y + (2 * a + 3 * d1 * d2 + b) * p1.y) / k,
+        };
+      }
+      if (d3 > 1e-4 && d2 > 1e-4) {
+        const a = d3 * d3, b = d2 * d2;
+        const k = 3 * d3 * (d3 + d2);
+        c2 = {
+          x: (a * p1.x - b * p3.x + (2 * a + 3 * d3 * d2 + b) * p2.x) / k,
+          y: (a * p1.y - b * p3.y + (2 * a + 3 * d3 * d2 + b) * p2.y) / k,
+        };
+      }
+      return { a: p1, c1, c2, b: p2 };
+    }
+
+    function splineOpen(pts: Pt[]): Seg[] {
+      const segs: Seg[] = [];
+      for (let i = 0; i < pts.length - 1; i++) {
+        segs.push(segment(pts[Math.max(0, i - 1)], pts[i], pts[i + 1], pts[Math.min(pts.length - 1, i + 2)]));
+      }
+      return segs;
+    }
+
+    function d(segs: Seg[]): string {
+      if (!segs.length) return '';
+      let out = `M${fmt(segs[0].a.x)} ${fmt(segs[0].a.y)}`;
+      for (const s of segs) {
+        out += `C${fmt(s.c1.x)} ${fmt(s.c1.y)} ${fmt(s.c2.x)} ${fmt(s.c2.y)} ${fmt(s.b.x)} ${fmt(s.b.y)}`;
+      }
+      return out;
+    }
+
+    function path(dAttr: string, cls: string): SVGPathElement {
+      const el = document.createElementNS(NS, 'path');
+      el.setAttribute('d', dAttr);
+      el.setAttribute('class', cls);
+      svg.appendChild(el);
+      return el;
+    }
+
+    function line(a: Pt, b: Pt, cls: string): SVGLineElement {
+      const el = document.createElementNS(NS, 'line');
+      el.setAttribute('x1', fmt(a.x));
+      el.setAttribute('y1', fmt(a.y));
+      el.setAttribute('x2', fmt(b.x));
+      el.setAttribute('y2', fmt(b.y));
+      el.setAttribute('class', cls);
+      svg.appendChild(el);
+      return el;
+    }
+
+    function addStroke(el: SVGGeometryElement, at: (tipY: number) => number) {
+      const len = el.getTotalLength();
+      el.setAttribute('stroke-dasharray', `${fmt(len)} ${fmt(len + 12)}`);
+      el.setAttribute('stroke-dashoffset', fmt(len));
+      strokes.push({ el, len, cur: 0, at });
+    }
+
+    /** running-max-y table: drawn as far down as the reader has got */
+    function tableFor(el: SVGGeometryElement, len: number) {
+      const table: Array<{ l: number; y: number }> = [];
+      let maxY = -Infinity;
+      const step = 5;
+      for (let l = 0; l <= len; l += step) {
+        const p = el.getPointAtLength(Math.min(l, len));
+        maxY = Math.max(maxY, p.y);
+        table.push({ l, y: maxY });
+      }
+      table.push({ l: len, y: maxY });
+      return (tipY: number) => {
+        if (tipY < table[0].y) return 0;
+        let lo = 0, hi = table.length - 1;
+        while (lo < hi) {
+          const mid = (lo + hi + 1) >> 1;
+          if (table[mid].y <= tipY) lo = mid;
+          else hi = mid - 1;
+        }
+        return table[lo].l;
+      };
+    }
+
+    function build() {
+      svg.textContent = '';
+      strokes = [];
+      if (narrow()) return;
+
+      const r = root.getBoundingClientRect();
+      rootTop = r.top + scrollY;
+      const W = root.clientWidth;
+      const H = root.clientHeight;
+      svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+      svg.setAttribute('width', String(W));
+      svg.setAttribute('height', String(H));
+
+      // offsets, not client rects: reveal/rise transforms must not move the anchors
+      const rel = (el: HTMLElement) => {
+        let x = 0;
+        let y = 0;
+        let node: HTMLElement | null = el;
+        while (node && node !== root) {
+          x += node.offsetLeft;
+          y += node.offsetTop;
+          node = node.offsetParent as HTMLElement | null;
+        }
+        return {
+          left: x,
+          right: x + el.offsetWidth,
+          top: y,
+          bottom: y + el.offsetHeight,
+          cy: y + el.offsetHeight / 2,
+        };
+      };
+
+      const hb = rel(h1);
+      const cb = rel(copy);
+      const lb = rel(label);
+
+      // the empty column to the right of the copy; stay inside the page
+      const bow = Math.min(cb.right + 104, W - 44);
+      const E = { x: lb.left - 26, y: lb.cy }; // where the mark lands, before "The index"
+
+      const pts: Pt[] = [
+        { x: hb.right + 44, y: hb.cy },
+        { x: cb.right + 62, y: hb.cy + 58 }, // clear the copy's corner before descending
+        { x: bow, y: cb.top + (cb.bottom - cb.top) * 0.55 },
+        { x: cb.right + 30, y: cb.bottom + 22 },
+        { x: lb.left + 170, y: (cb.bottom + lb.top) / 2 + 12 },
+        { x: E.x + 34, y: lb.top - 34 },
+        { x: E.x + 8, y: E.y - 12 },
+      ];
+
+      const main = path(d(splineOpen(pts)), 'thread-line');
+      addStroke(main, tableFor(main, main.getTotalLength()));
+
+      // the mark draws itself where the line stops: you are here
+      const s = 6.2;
+      const arms: Array<[Pt, Pt]> = [
+        [{ x: E.x, y: E.y - s }, { x: E.x, y: E.y + s }],
+        [{ x: E.x - s * 0.87, y: E.y - s * 0.5 }, { x: E.x + s * 0.87, y: E.y + s * 0.5 }],
+        [{ x: E.x - s * 0.87, y: E.y + s * 0.5 }, { x: E.x + s * 0.87, y: E.y - s * 0.5 }],
+      ];
+      arms.forEach(([a, b], i) => {
+        const el = line(a, b, 'thread-mark');
+        addStroke(el, (tipY) => clamp((tipY - (E.y - 30) - i * 8) / 30, 0, 1) * el.getTotalLength());
+      });
+
+      tip = targetTip();
+      if (reduced) {
+        for (const st of strokes) {
+          st.cur = st.len;
+          st.el.setAttribute('stroke-dashoffset', '0');
+        }
+      } else {
+        // cur starts at 0 so the first paint draws itself in
+        if (!raf) raf = requestAnimationFrame(tick);
+      }
+    }
+
+    const targetTip = () => scrollY + innerHeight * 0.62 - rootTop;
+
+    function render() {
+      let settled = true;
+      for (const st of strokes) {
+        const target = st.at(tip);
+        st.cur += (target - st.cur) * 0.14;
+        if (Math.abs(target - st.cur) > 0.3) settled = false;
+        else st.cur = target;
+        st.el.setAttribute('stroke-dashoffset', fmt(st.len - st.cur));
+        st.el.style.opacity = st.cur < 0.5 ? '0' : '';
+      }
+      return settled;
+    }
+
+    function tick() {
+      raf = 0;
+      if (!render()) raf = requestAnimationFrame(tick);
+    }
+
+    function onScroll() {
+      if (reduced) return;
+      tip = targetTip();
+      if (!raf) raf = requestAnimationFrame(tick);
+    }
+
+    function safeBuild() {
+      try {
+        build();
+      } catch (err) {
+        console.error(err);
+        svg.style.display = 'none';
+      }
+    }
+
+    safeBuild();
+    addEventListener('scroll', onScroll, { passive: true });
+
+    let pending = 0;
+    const ro = new ResizeObserver(() => {
+      cancelAnimationFrame(pending);
+      pending = requestAnimationFrame(() => {
+        safeBuild();
+        onScroll();
+      });
+    });
+    ro.observe(root);
+    document.fonts?.ready.then(() => {
+      safeBuild();
+      onScroll();
+    });
+  }
+</script>

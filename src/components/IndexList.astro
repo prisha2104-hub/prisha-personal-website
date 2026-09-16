@@ -4,12 +4,12 @@ import { sections } from '../data/sections';
 const items = sections.filter((s) => s.slug !== '/');
 ---
 
-<nav class="index" aria-label="Site index">
-  <p class="label">An index, of sorts</p>
+<nav class="index" aria-label="Site index" data-reveal>
+  <p class="label">The index</p>
   <ol>
     {
-      items.map((s) => (
-        <li>
+      items.map((s, i) => (
+        <li style={`--i: ${i}`}>
           <a href={s.slug}>
             <span class="num">{s.num}</span>
             <span class="title">{s.title}</span>
@@ -31,6 +31,27 @@ const items = sections.filter((s) => s.slug !== '/');
 
   li {
     border-top: 1px solid var(--line-faint);
+  }
+
+  /* rows follow the reveal one after another */
+  :global(.js) .index[data-reveal] li {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  :global(.js) .index[data-reveal].is-revealed li {
+    opacity: 1;
+    transform: none;
+    transition:
+      opacity var(--dur-3) var(--ease-out) calc(var(--i) * 55ms),
+      transform var(--dur-3) var(--ease-out) calc(var(--i) * 55ms);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    :global(.js) .index[data-reveal] li {
+      opacity: 1;
+      transform: none;
+    }
   }
 
   li:last-child {

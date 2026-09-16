@@ -4,13 +4,15 @@
  * The vine (Chain.astro) draws the causality; each `connector` is spoken by the
  * line just before it reaches the next heading, so headings never start with
  * "so" or "then" themselves. Evidence is what appears when someone hovers or
- * taps the marked term in a detail. Nothing here is required reading — the
- * page has to make sense with every piece of evidence left undiscovered.
+ * taps the marked term in a detail — except `window`, which is part of the
+ * final moment and simply arrives with it. Nothing here is required reading —
+ * the page has to make sense with every piece of evidence left undiscovered.
  *
  * Structure the component understands: any number of alternating left/right
  * spine moments, exactly one `thought`, then one or more `close` moments.
- * Every fact here is real (the same record as /conventional). The jokes are
- * jokes; the dates, figures and jobs are not.
+ * The last close is UAA — it has no page of its own and no product link;
+ * this moment is where it lives. Every fact here is real (the same record
+ * as /conventional). Keep the voice plain: no punchline per stop.
  */
 
 export type DetailPart = string | { term: string };
@@ -27,7 +29,9 @@ export type Evidence =
   /** Figures with captions, like a small ledger. */
   | { kind: 'ledger'; note: string; items: { figure: string; text: string }[] }
   /** Browser tabs, accumulating. */
-  | { kind: 'tabs'; items: string[] };
+  | { kind: 'tabs'; items: string[] }
+  /** The same material, settled into one frame. Shown as the moment lights. */
+  | { kind: 'window'; note: string; items: string[] };
 
 export interface Moment {
   id: string;
@@ -38,7 +42,6 @@ export interface Moment {
   evidence?: Evidence;
   /** Where the block sits. `thought` renders inside the bubble. */
   place: 'left' | 'right' | 'thought' | 'close';
-  product?: { name: string; href: string; cta: string; peek: string[] };
 }
 
 export const moments: Moment[] = [
@@ -66,43 +69,41 @@ export const moments: Moment[] = [
     id: 'reading',
     place: 'right',
     connector: 'so',
-    heading: 'The reading escalated.',
+    heading: 'The newspapers led to the filings.',
     detail: [
-      'Newspapers first, then the documents the newspapers were paraphrasing: filings, earnings calls, footnotes. Somewhere in there the ',
+      'I went from the coverage to the documents it was paraphrasing: filings, earnings calls, footnotes. Somewhere in there the ',
       { term: 'question' },
       ' changed — from what a company is worth to why the people pricing it behave the way they do.',
     ],
     evidence: {
       kind: 'cascade',
-      note: 'the escalation, roughly',
+      note: 'the questions, in order',
       items: [
         { text: 'why did the stock move?' },
         { text: 'what did the company actually report?' },
         { text: 'what did management say on the call?' },
         { text: 'why did anyone believe them?' },
-        { text: 'would I have?' },
       ],
     },
   },
   {
     id: 'research',
     place: 'left',
-    connector: 'at some point',
-    heading: 'I stopped reading and tested something.',
+    connector: 'then',
+    heading: 'I tested one of the claims.',
     detail: [
       'Anchoring — the theory that investors cling to the first price they see. Six months of price data, linear ',
       { term: 'regressions' },
-      ' and model-checking, then a write-up. It found 500-odd readers, several of them not related to me.',
+      ' and model-checking, then a write-up. About 500 people read it.',
     ],
     evidence: {
       kind: 'cascade',
-      note: 'the method, roughly',
+      note: 'the method',
       items: [
-        { text: 'pick a claim everyone repeats: anchoring' },
-        { text: 'collect the price data' },
-        { text: 'run the regressions' },
-        { text: 'check significance, magnitude, fit' },
-        { text: 'publish, brace' },
+        { text: 'the claim: investors anchor to old prices' },
+        { text: 'six months of price data' },
+        { text: 'linear regressions' },
+        { text: 'significance, magnitude, model fit' },
       ],
     },
   },
@@ -114,7 +115,7 @@ export const moments: Moment[] = [
     detail: [
       'A summer at ',
       { term: 'HDFC Asset Management' },
-      ' in Mumbai. I screened MCA filings to build a database of fifty single-family offices the desk could actually call, and graded asset managers on how they treat investors — by phoning them and turning up in person. Professional research, it turns out, is the same tabs with better stationery.',
+      ' in Mumbai. I screened MCA filings to build a database of fifty single-family offices the desk could actually call, and graded asset managers on how they treat investors — by phoning them and turning up in person.',
     ],
     evidence: {
       kind: 'ledger',
@@ -153,27 +154,26 @@ export const moments: Moment[] = [
     },
   },
   {
-    id: 'uaa',
-    place: 'close',
-    connector: 'it turned out',
-    heading: 'I was not the only one with a tab problem.',
-    detail: [
-      'A friend had hit the same wall, so since June we’ve been building the fix: filings, screeners, transcripts, models and notes in one workspace. My half is the engineering — valuation models, quantitative screens, portfolio analytics — and the apologies when the build breaks.',
-    ],
-    product: {
-      name: 'Universal Asset Analyzer',
-      href: '/uaa',
-      cta: 'Explore UAA',
-      peek: ['the problem', 'the product', 'the deck'],
-    },
-  },
-  {
     id: 'teaching',
     place: 'close',
     connector: 'meanwhile',
     heading: 'I teach the math I lean on.',
     detail: [
-      'TA for Calculus III in the Columbia math department — in the room while students work through problem sets, on email for everything after. I have learned that “any questions?” and the silence that follows are statistically independent events.',
+      'TA for Calculus III in the Columbia math department: in the room while students work through problem sets, on email for everything after.',
     ],
+  },
+  {
+    id: 'uaa',
+    place: 'close',
+    connector: 'it turned out',
+    heading: 'I was not the only one with a tab problem.',
+    detail: [
+      'A friend had hit the same wall, so since June we’ve been building Universal Asset Analyzer: filings, screeners, valuation models, research notes and the portfolio in one window. My half is the engineering — the models, the quantitative screens, the pipelines underneath. It isn’t released; it’s where most of my time goes.',
+    ],
+    evidence: {
+      kind: 'window',
+      note: 'in one window',
+      items: ['filings', 'screener', 'transcripts', 'models', 'notes', 'portfolio'],
+    },
   },
 ];

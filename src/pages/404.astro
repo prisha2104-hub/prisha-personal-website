@@ -4,11 +4,15 @@ import Base from '../layouts/Base.astro';
 
 <Base title="Not found" description="There’s no page here.">
   <div class="wrap lost">
-    <p class="label">?? / 08</p>
+    <p class="label">?? / 07</p>
     <h1>There’s no page here.</h1>
     <p class="copy prose">
-      Either the URL drifted, or I haven’t built this room yet. Both are plausible.
+      Either the URL drifted, or I haven’t built this page yet.
     </p>
+    <svg class="stub" viewBox="0 0 180 16" aria-hidden="true">
+      <path class="run" d="M2 9 C 34 5, 74 12, 118 8 S 150 9, 156 8.5" pathLength="100"></path>
+      <path class="end" d="M165 3.5 l 10 9 M175 3.5 l -10 9" pathLength="100"></path>
+    </svg>
     <a class="draw-link back" href="/">Back to the index</a>
   </div>
 </Base>
@@ -29,9 +33,53 @@ import Base from '../layouts/Base.astro';
     font-size: var(--text-lede);
   }
 
+  /* the line sets out and stops where the page would have been */
+  .stub {
+    width: 180px;
+    margin-top: 2.6rem;
+    overflow: visible;
+  }
+
+  .stub path {
+    fill: none;
+    stroke: var(--accent-soft);
+    stroke-width: 1.5;
+    stroke-linecap: round;
+  }
+
+  .stub .end {
+    stroke: var(--accent);
+  }
+
+  :global(.js) .stub .run {
+    stroke-dasharray: 100 102;
+    stroke-dashoffset: 100;
+    animation: stub-draw 800ms var(--ease-out) 250ms forwards;
+  }
+
+  :global(.js) .stub .end {
+    stroke-dasharray: 100 102;
+    stroke-dashoffset: 100;
+    animation: stub-draw 360ms var(--ease-out) 1000ms forwards;
+  }
+
+  @keyframes stub-draw {
+    to {
+      stroke-dashoffset: 0;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    :global(.js) .stub .run,
+    :global(.js) .stub .end {
+      animation: none;
+      stroke-dashoffset: 0;
+    }
+  }
+
   .back {
     display: inline-block;
-    margin-top: 2.6rem;
+    margin-top: 2.4rem;
     color: var(--ink);
   }
 </style>

@@ -4,3 +4,7 @@ dist/
 .DS_Store
 npm-debug.log*
 .claude/
+
+# local environment files — never commit credentials
+.env
+.env.*
